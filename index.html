@@ -203,6 +203,8 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .chip.ok{background:var(--like);color:var(--on-solid)}
 .c-title{font-size:18px;font-weight:800;line-height:1.4}
 .c-img{border-radius:11px;max-height:340px;width:100%;object-fit:cover;background:var(--surface-2)}
+.acct{border:1.5px solid var(--pri);background:var(--pri-soft);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.acct.ok{border-color:var(--line);background:var(--surface);flex-direction:row;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px}
 .off-b{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#1D9BF0;color:#fff;font-size:10px;font-weight:900;vertical-align:-2px;margin-inline-start:2px}
 .gal-w{position:relative}
 .gal{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:11px;overscroll-behavior-x:contain}
@@ -1209,7 +1211,7 @@ function updateSimilar(){
 function renderWish(){
  const ids=wishIds(),list=ids.map(byId).sort((a,b)=>(isPublic(b)-isPublic(a))||(yesN(b)-yesN(a)));
  const av=list.filter(isPublic).length,un=unseenAvail();
- $('#view').innerHTML=`<div class="col"><div class="wl-h"><h2>${T('navWishL')}</h2><p class="muted tnum">${T('wlSub')(fmt(list.length),fmt(av))}</p></div>${buyerOrdersHTML()}
+ $('#view').innerHTML=`<div class="col"><div class="wl-h"><h2>${T('navWishL')}</h2><p class="muted tnum">${T('wlSub')(fmt(list.length),fmt(av))}</p></div>${acctBoxHTML()}${buyerOrdersHTML()}
  ${av?`<div class="avail">${I.bell}<span>${T('availNow')(fmt(av))}</span></div>`:''}
  ${list.length?`<div class="feed">${list.map(i=>`<div class="wish-item" data-id="${i.id}">${pledgeHTML(i)}${cardHTML(i)}</div>`).join('')}</div>`:`<div class="empty-box">${I.star}<p>${T('wishEmpty')}</p><button class="btn pri" data-act="nav" data-v="feed">${T('browse')}</button></div>`}</div>`;
  if(un){S.me.seenAvail=Array.from(new Set(S.me.seenAvail.concat(ids.filter(k=>isPublic(byId(k))))));save();setTimeout(updateBadges,1500)}
@@ -1420,7 +1422,7 @@ function miHTML(i,rank,n){
 function renderMine(){
  const mine=S.ideas.filter(isOwner).sort((a,b)=>b.created-a.created),ranked=S.ideas.slice().sort((a,b)=>yesN(b)-yesN(a));
  const w=mine.reduce((s,i)=>s+yesN(i),0),made=mine.filter(i=>i.status!=='open').length;
- $('#view').innerHTML=`<div class="col col-wide"><div class="wl-h"><h2>${T('navMine')}</h2><p class="muted tnum">${T('mineSub')(fmt(mine.length),fmt(w),fmt(made))}</p></div>
+ $('#view').innerHTML=`<div class="col col-wide"><div class="wl-h"><h2>${T('navMine')}</h2><p class="muted tnum">${T('mineSub')(fmt(mine.length),fmt(w),fmt(made))}</p></div>${acctBoxHTML()}
  ${mine.length?mine.map(i=>miHTML(i,ranked.indexOf(i)+1,ranked.length)).join(''):`<div class="empty-box">${I.bulb}<p>${T('mineEmpty')}</p><button class="btn pri" data-act="compose-open">${T('postFirst')}</button></div>`}
  <section class="recover-box"><h3>${I.lock} ${T('recover')}</h3><p class="muted" style="font-size:13.5px">${T('recoverHint')}</p><form data-form="recover" class="sug-f"><input class="inp" name="k" id="rk" placeholder="TM-XXXX-XXXX" dir="ltr" autocomplete="off" spellcheck="false" aria-label="${T('recover')}"><button class="btn sm">${T('recoverBtn')}</button></form><p id="rmsg" class="muted" aria-live="polite"></p></section></div>`;
  mine.forEach(i=>{i.comments.forEach(c=>{if(!c.adopted&&!c.dismissed&&!S.me.seenSug.includes(c.id))S.me.seenSug.push(c.id)});S.me.seenStatus[i.id]=i.status;S.me.seenMs[i.id]=msOf(i)});
@@ -1782,7 +1784,7 @@ window.addEventListener('hashchange',route);
 const SB={url:'https://twouinzecjvfrxbgycrb.supabase.co',key:'sb_publishable_HW-w2G9UpVHaBs2n2xhFXg_odjjPt4i'},AUTHK='tamanna.auth';
 let sess=null;try{sess=JSON.parse(localStorage.getItem(AUTHK))}catch(e){}
 async function authReq(path,body){const r=await fetch(SB.url+'/auth/v1/'+path,{method:'POST',headers:{apikey:SB.key,'Content-Type':'application/json'},body:JSON.stringify(body||{})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.error_description||('auth '+r.status));return j}
-function keepSess(j){sess={at:j.access_token,rt:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-60)*1e3,uid:j.user&&j.user.id};try{localStorage.setItem(AUTHK,JSON.stringify(sess))}catch(e){}S.me.token=sess.uid}
+function keepSess(j){sess={at:j.access_token,rt:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-60)*1e3,uid:j.user&&j.user.id,em:(j.user&&j.user.email)||'',anon:!!(j.user&&j.user.is_anonymous)};try{localStorage.setItem(AUTHK,JSON.stringify(sess))}catch(e){}S.me.token=sess.uid}
 let tokP=null;
 function token(){if(sess&&Date.now()<sess.exp)return Promise.resolve(sess.at);
  return tokP||(tokP=(async()=>{try{if(sess&&sess.rt){try{keepSess(await authReq('token?grant_type=refresh_token',{refresh_token:sess.rt}));return sess.at}catch(e){if(!/invalid|not found|revoked/i.test(e.message))throw e}}keepSess(await authReq('signup',{}));return sess.at}finally{tokP=null}})())}
@@ -1886,6 +1888,48 @@ async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.
   if(up)await rest('POST','factories',{handle,name,country:f.country.value.trim()||null,website:f.web.value.trim()||null},'return=minimal');
   await liveLoad();render();toast(up?T('facWelcome'):T('facHi'));
  }catch(e){const s=e.message||'';fail(/already registered|already exists/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/duplicate|unique/i.test(s)?T('handleTaken'):/password/i.test(s)?T('pwHint'):T('netErr'))}}
+/* ---- "Save your account": an anonymous visitor adds email + password once (never shown publicly),
+   then logs in on any device and gets back wishes, ideas and messages. Logging in on a device that already
+   had local activity merges it: wishes/likes are re-applied and ideas posted there are claimed with their keys. ---- */
+const savedAcct=()=>!!(sess&&sess.em&&!sess.anon);
+const maskEmail=e=>{const [u,d]=String(e).split('@');return d?(u.slice(0,2)+'•••@'+d):e};
+function acctBoxHTML(){if(!LIVE)return '';
+ if(savedAcct())return `<div class="acct ok"><span>✓ ${T('acctSaved')(`<b dir="ltr">${esc(maskEmail(sess.em))}</b>`)}</span><button class="link" data-act="acct-logout">${T('facLogout')}</button></div>`;
+ const w=wishIds().length,m=S.ideas.filter(isOwner).length;
+ return `<div class="acct"><b>💾 ${T('acctSaveT')}</b><p class="muted" style="font-size:13px;line-height:1.6;margin:0">${w||m?T('acctNudge')(fmt(w),fmt(m)):T('acctSaveD')}</p><div class="row"><button class="btn sm pri" data-act="acct-open" data-v="save">${T('acctSaveBtn')}</button><button class="btn sm ghost" data-act="acct-open" data-v="login">${T('acctHave')}</button></div></div>`}
+function acctHTML(mode){const save=mode==='save';return `<h2>${save?'💾 '+T('acctSaveT'):'🔑 '+T('acctHave')}</h2><p class="muted" style="font-size:13.5px;line-height:1.6">${save?T('acctSaveInfo'):T('acctLoginInfo')}</p>
+ <form class="edit" data-form="acct" data-mode="${mode}"><label class="fld">${T('emailL')}<input name="email" type="email" required dir="ltr" autocomplete="email"></label>
+ <label class="fld">${T('pwL')}<input name="pw" type="password" required minlength="8" dir="ltr" autocomplete="${save?'new-password':'current-password'}">${save?`<small class="muted">${T('pwHint')} ${T('acctPwKeep')}</small>`:''}</label>
+ <p class="err" id="ac-err" hidden></p><button class="btn pri wide">${save?T('acctSaveBtn'):T('facLogin')}</button>
+ <button type="button" class="link" data-act="acct-open" data-v="${save?'login':'save'}">${save?T('acctHave'):T('acctNew')}</button></form>`}
+async function acctSubmit(f){const save=f.dataset.mode==='save',err=$('#ac-err'),btn=f.querySelector('button.pri'),fail=m=>{err.textContent=m;err.hidden=false;btn.disabled=false};err.hidden=true;btn.disabled=true;
+ const email=f.email.value.trim(),pw=f.pw.value;
+ try{
+  if(save){
+   const at=await token();
+   const r=await fetch(SB.url+'/auth/v1/user',{method:'PUT',headers:{apikey:SB.key,Authorization:'Bearer '+at,'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});
+   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.error_code||j.message||('http '+r.status));
+   keepSess(await authReq('token?grant_type=refresh_token',{refresh_token:sess.rt}));
+  }else{
+   const prevVotes=Object.assign({},S.me.votes),prevReacts=Object.assign({},S.me.reacts),keys=Object.values(S.me.keys||{}),old=sess&&sess.anon?Object.assign({},sess):null;
+   keepSess(await authReq('token?grant_type=password',{email,password:pw}));
+   /* the temporary device account's own wishes/likes are removed after the merge, so nothing is counted twice */
+   const dropOld=async()=>{if(!old||!old.uid||old.uid===sess.uid)return;const h={apikey:SB.key,Authorization:'Bearer '+old.at};for(const t of ['votes','reactions'])await fetch(`${SB.url}/rest/v1/${t}?user_id=eq.${old.uid}`,{method:'DELETE',headers:h}).catch(()=>{})};
+   /* merge this device's activity into the account */
+   const [sv,sr]=await Promise.all([rest('GET','votes?select=idea_id'),rest('GET','reactions?select=idea_id')]);const hv=new Set((sv||[]).map(x=>x.idea_id)),hr=new Set((sr||[]).map(x=>x.idea_id));
+   for(const [id,v] of Object.entries(prevVotes))if(!hv.has(id)&&byId(id))await rest('POST','votes?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal').catch(()=>{});
+   for(const [id,v] of Object.entries(prevReacts))if(v&&!hr.has(id)&&byId(id))await rest('POST','reactions?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal').catch(()=>{});
+   for(const k of keys)if(k)await rest('POST','rpc/claim_idea',{p_key:k}).catch(()=>{});
+   await dropOld();
+  }
+  await liveLoad();closeModal();render();toast(save?T('acctSavedT'):T('facHi'));
+ }catch(e){const s=e.message||'';fail(/already|exists|registered/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/password|weak/i.test(s)?T('pwHint'):/email/i.test(s)?T('acctBadEmail'):T('netErr'))}}
+document.addEventListener('submit',e=>{if(e.target.dataset.form==='acct'){e.preventDefault();acctSubmit(e.target)}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="acct-open"],[data-act="acct-logout"]');if(!b)return;e.preventDefault();if(b.dataset.act==='acct-open')openModal(acctHTML(b.dataset.v),'acct');else facLogout()});
+Object.assign(L.ar,{acctSaveT:'احفظ حسابك',acctSaveD:'احفظ حسابك بإيميل وكلمة مرور، فترجع لك أمنياتك وأفكارك ورسائلك من أي جهاز وفي أي وقت.',acctNudge:(w,m)=>`عندك ${w} أمنية و${m} فكرة محفوظة في هذا الجهاز فقط. احفظ حسابك حتى لا تضيع، وتفتحها من أي جهاز آخر.`,acctSaveBtn:'احفظ حسابي',acctHave:'عندي حساب محفوظ',acctNew:'ما عندي حساب، أحفظ حسابي',acctSaveInfo:'اكتب إيميلك وكلمة مرور. لا يظهر إيميلك لأي أحد أبداً، وتبقى مجهولاً للناس. بعدها ادخل بنفس الإيميل من أي جهاز.',acctLoginInfo:'ادخل بالإيميل وكلمة المرور، فترجع لك أمنياتك وأفكارك ورسائلك. وما سوّيته في هذا الجهاز يُضاف لحسابك.',acctPwKeep:'احفظها جيداً، فاسترجاع كلمة المرور غير متاح بعد.',acctSaved:e=>`حسابك محفوظ: ${e}`,acctSavedT:'حُفظ حسابك ✓ تقدر تدخل به من أي جهاز.',acctBadEmail:'تأكد من الإيميل.'});
+Object.assign(L.en,{acctSaveT:'Save your account',acctSaveD:'Save your account with an email and password to get your wishes, ideas and messages back on any device, anytime.',acctNudge:(w,m)=>`You have ${w} wish(es) and ${m} idea(s) saved on this device only. Save your account so they’re never lost and open them on any other device.`,acctSaveBtn:'Save my account',acctHave:'I have a saved account',acctNew:'No account yet? Save mine',acctSaveInfo:'Enter your email and a password. Your email is never shown to anyone, and you stay anonymous. Then log in with it on any device.',acctLoginInfo:'Log in with your email and password to get your wishes, ideas and messages back. What you did on this device is added to your account.',acctPwKeep:'Keep it safe: password reset isn’t available yet.',acctSaved:e=>`Your account is saved: ${e}`,acctSavedT:'Account saved ✓ You can log in on any device.',acctBadEmail:'Check the email address.'});
+Object.assign(L.zh,{acctSaveT:'保存你的账户',acctSaveD:'用邮箱和密码保存账户,随时在任何设备上找回你的心愿、创意和消息。',acctNudge:(w,m)=>`你有 ${w} 个心愿和 ${m} 个创意仅保存在此设备上。保存账户以免丢失,并可在其他设备上打开。`,acctSaveBtn:'保存我的账户',acctHave:'我已有账户',acctNew:'还没有账户?保存我的账户',acctSaveInfo:'输入邮箱和密码。你的邮箱不会向任何人显示,你仍保持匿名。之后可在任何设备上登录。',acctLoginInfo:'用邮箱和密码登录,找回你的心愿、创意和消息。你在此设备上的操作会合并到账户中。',acctPwKeep:'请妥善保存,目前暂不支持找回密码。',acctSaved:e=>`你的账户已保存:${e}`,acctSavedT:'账户已保存 ✓ 可在任何设备上登录。',acctBadEmail:'请检查邮箱地址。'});
+Object.assign(L.tr,{acctSaveT:'Hesabını kaydet',acctSaveD:'Hesabını e-posta ve şifreyle kaydet; dileklerin, fikirlerin ve mesajların her cihazda, her zaman geri gelsin.',acctNudge:(w,m)=>`Yalnızca bu cihazda kayıtlı ${w} dileğin ve ${m} fikrin var. Kaybolmaması ve başka cihazlarda açabilmek için hesabını kaydet.`,acctSaveBtn:'Hesabımı kaydet',acctHave:'Kayıtlı hesabım var',acctNew:'Hesabın yok mu? Kaydet',acctSaveInfo:'E-postanı ve bir şifre gir. E-postan kimseye gösterilmez, anonim kalırsın. Sonra her cihazda bununla giriş yap.',acctLoginInfo:'Dileklerin, fikirlerin ve mesajların için e-posta ve şifrenle giriş yap. Bu cihazda yaptıkların hesabına eklenir.',acctPwKeep:'İyi sakla: şifre sıfırlama henüz yok.',acctSaved:e=>`Hesabın kayıtlı: ${e}`,acctSavedT:'Hesap kaydedildi ✓ Her cihazda giriş yapabilirsin.',acctBadEmail:'E-posta adresini kontrol et.'});
 /* ---- official "Tamanna Team" account: hidden page at #team; becoming official is done only in the SQL Editor ---- */
 const TEAM_NAME='Tamanna Team';
 let OFFICIAL=false;
