@@ -205,7 +205,8 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .c-img{border-radius:11px;max-height:340px;width:100%;object-fit:cover;background:var(--surface-2)}
 .c-desc{color:var(--fg);opacity:.9;white-space:pre-line;overflow-wrap:anywhere}
 /* Live site, milestone 1: marketplace & factory tools are still demo-only, so they stay hidden */
-body.live [data-nav="factory"],body.live [data-act="make"],body.live [data-act="skip"],body.live [data-v="factory"],body.live .upl,body.live .msec:has([data-act="reset"]){display:none!important}
+body.live [data-act="skip"],body.live .upl,body.live .msec:has([data-act="reset"]),body.live .fac-top .seg:has([data-act="f-tab"]),
+body.live .tier:has(#t-pub),body.live .giftf,body.live .fld:has(#mk-c),body.live .two:has(#mk-p),body.live .fld:has(#mk-f){display:none!important}
 .adds{display:flex;flex-direction:column;gap:6px}.add{border-inline-start:3px solid var(--pri);padding:4px 10px;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
 .fnote{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;background:var(--surface-2)}
 .fnote.pend{border-style:dashed;border-color:var(--pri)}.fn-h{margin:0;font-weight:700}.fn-t{margin:0;white-space:pre-line;overflow-wrap:anywhere}
@@ -844,7 +845,9 @@ const dnCache={};
 function langName(code,inCode){const k=code+'|'+(inCode||code);if(dnCache[k])return dnCache[k];let n=code;try{n=new Intl.DisplayNames([inCode||code],{type:'language'}).of(code)||code}catch(e){}n=n.charAt(0).toLocaleUpperCase(inCode||code)+n.slice(1);return dnCache[k]=n}
 /* Factory directory (usernames creators can direct ideas to). In this prototype "you" as a factory are @my_factory. */
 const FACTORIES=[['@gulfpolymers','Gulf Polymers Co.'],['@atlasfootwear','Atlas Footwear'],['@nadirmfg','Nadir Manufacturing'],['@brightway_sz','Shenzhen Brightway Electronics'],['@istanbultekstil','Istanbul Tekstil'],['@gz_hometech','Guangzhou HomeTech'],['@bursametal','Bursa Metal Works'],['@kidstep','KidStep Ayakkabı'],['@my_factory','My factory (you)']];
-const myHandle=()=>'@my_factory';
+/* Live site: the signed-in factory's profile {handle,name,country,website}, or null */
+let FAC=null;
+const myHandle=()=>LIVE?(FAC?FAC.handle:'@-'):'@my_factory';
 const autoCode=()=>((navigator.language||'en').split('-')[0]||'en').toLowerCase();
 
 /* ---------- helpers ---------- */
@@ -1238,8 +1241,9 @@ function sellActHTML(i){
  return s;
 }
 function renderFactory(){
+ if(LIVE&&!FAC){$('#view').innerHTML=facAuthHTML();return}
  const th=(k,l)=>`<th><button data-act="f-sort" data-k="${k}" class="${UI.fSort===k?'on':''}">${l}${UI.fSort===k?(UI.fDir<0?' ↓':' ↑'):''}</button></th>`;
- const head=`<div><h2>${T('facTitle')} <button class="link" style="font-size:13px;font-weight:600" data-act="how" data-fac="1">${T('heroHow')}</button></h2><p class="muted">${T('facSub')} · <span dir="ltr">${T('yourHandle')(myHandle())}</span> · <span class="tnum">${T('contactLeft')(fmt(Math.max(0,CONTACT_MAX-contactsUsed())),fmt(CONTACT_MAX))}</span></p><div class="seg" style="margin-top:8px" role="group"><button data-act="f-tab" data-v="ideas" class="${UI.fTab!=='orders'?'on':''}">${T('facIdeas')}</button><button data-act="f-tab" data-v="products" class="${UI.fTab==='products'?'on':''}">${T('facProducts')} (${fmt(myProducts().length)})</button><button data-act="f-tab" data-v="orders" class="${UI.fTab==='orders'?'on':''}">${T('facOrders')} (${fmt(myOrders().length)})</button></div></div>`;
+ const head=`<div><h2>${T('facTitle')} <button class="link" style="font-size:13px;font-weight:600" data-act="how" data-fac="1">${T('heroHow')}</button></h2><p class="muted">${T('facSub')} · <span dir="ltr">${T('yourHandle')(myHandle())}</span> · <span class="tnum">${T('contactLeft')(fmt(Math.max(0,CONTACT_MAX-contactsUsed())),fmt(CONTACT_MAX))}</span>${LIVE&&FAC?` · <b>${esc(FAC.name)}</b> <button class="link" data-act="fac-logout">${T('facLogout')}</button>`:''}</p><div class="seg" style="margin-top:8px" role="group"><button data-act="f-tab" data-v="ideas" class="${UI.fTab!=='orders'?'on':''}">${T('facIdeas')}</button><button data-act="f-tab" data-v="products" class="${UI.fTab==='products'?'on':''}">${T('facProducts')} (${fmt(myProducts().length)})</button><button data-act="f-tab" data-v="orders" class="${UI.fTab==='orders'?'on':''}">${T('facOrders')} (${fmt(myOrders().length)})</button></div></div>`;
  if(UI.fTab==='orders'){$('#view').innerHTML=`<section class="fac"><div class="fac-top">${head}</div>${ordersHTML()}</section>`;return}
  if(UI.fTab==='products'){$('#view').innerHTML=`<section class="fac"><div class="fac-top">${head}</div>${productsHTML()}</section>`;return}
  const nInv=S.ideas.filter(i=>(i.invites||[]).includes(myHandle())).length;
@@ -1567,7 +1571,7 @@ document.addEventListener('click',async e=>{
  case 'edit-cancel':UI.editing=null;refreshCard(id);break;
  case 'ret':{const o=S.orders.find(x=>x.id===el.dataset.o);if(!o||o.buyer!==S.me.token||o.status!=='shipped')break;o.status='returnReq';o.retAt=Date.now();save();renderView();toast(T('retT'));break}
  case 'fn-ok':case 'fn-no':{if(!i||!isOwner(i))break;const n=fnOf(i,el.dataset.f);if(!n)break;
-  n.verdict=act==='fn-ok'?'ok':'no';n.vAt=Date.now();
+  n.verdict=act==='fn-ok'?'ok':'no';n.vAt=Date.now();if(LIVE)dbRpc('set_note_verdict',{p_idea:i.id,p_handle:n.fac,p_verdict:n.verdict});
   save();if(UI.view==='mine')renderView();else refreshCard(id);updateBadges();toast(T(act==='fn-ok'?'fnOkT':'fnNoT'));break}
  /* Owner can delete only while no factory has taken the idea (offers, outside sale or orders keep it, since buyers depend on it). Two taps to confirm. */
  case 'del-idea':{if(!i||!isOwner(i))break;
@@ -1592,10 +1596,10 @@ document.addEventListener('click',async e=>{
  case 'pl-later':if(i){S.me.pledgeSkip[id]=true;UI.pledgeOpen=null;save();renderView();updateBadges()}break;
  case 'pl-remove':if(i){delete S.me.pledges[id];UI.pledgeOpen=null;save();renderView();updateBadges()}break;
  case 'thread':{const t=byId(el.dataset.pid);openThread(t,el.dataset.t,el.dataset.role);break}
- case 'msg-creator':{const t=byId(el.dataset.pid);if(!t||isOwner(t))break;const th=(t.threads||[]).find(x=>x.fac===myHandle());if(!th&&!canContact(t)){toast(T('contactLimit'));break}openThread(t,th?th.id:null,'f');break}
+ case 'msg-creator':{const t=byId(el.dataset.pid);if(!t||isOwner(t))break;if(LIVE&&!FAC){closeModal();go('factory');toast(T('facNeed'));break}const th=(t.threads||[]).find(x=>x.fac===myHandle());if(!th&&!canContact(t)){toast(T('contactLimit'));break}openThread(t,th?th.id:null,'f');break}
  case 'inbox-idea':if(i){UI.inboxIdea=id;go('inbox')}break;
  case 'inbox-all':UI.inboxIdea=null;renderInbox();break;
- case 'block':{const u=UI.thread,t2=byId(u.pid),th=t2&&findThread(t2,u.tid);if(th&&isOwner(t2)){th.blocked=!th.blocked;save();repaintChat()}break}
+ case 'block':{const u=UI.thread,t2=byId(u.pid),th=t2&&findThread(t2,u.tid);if(th&&isOwner(t2)){th.blocked=!th.blocked;if(LIVE)dbRpc('set_thread_blocked',{p_thread:th.id,p_blocked:th.blocked});save();repaintChat()}break}
  case 'mine-sug':if(i){UI.openC.add(id);openIdeaId(id)}break;
  case 'mine-edit':if(i&&isOwner(i)){UI.editing=id;openIdeaId(id)}break;
  case 'f-tab':if(!$('#modal').hidden)closeModal();UI.fTab=el.dataset.v;renderFactory();break;
@@ -1604,7 +1608,7 @@ document.addEventListener('click',async e=>{
  case 'kpi-ship':UI.fTab='orders';renderFactory();break;
  case 'kpi-idea':{const t=byId(el.dataset.pid);if(!t)break;if(matchMedia('(max-width:1099px)').matches)openModal(panelHTML(t));else{UI.fSel=t.id;UI.fInv=false;renderFactory()}break}
  case 'f-inv':UI.fInv=!UI.fInv;renderFactory();break;
- case 'inv-rm':if(i&&isOwner(i)){i.invites=(i.invites||[]).filter(h=>h!==el.dataset.h);save();renderView()}break;
+ case 'inv-rm':if(i&&isOwner(i)){i.invites=(i.invites||[]).filter(h=>h!==el.dataset.h);if(LIVE)dbInvite(i,el.dataset.h,false);save();renderView()}break;
  case 'apply-code':applyCode(byId(el.closest('form').dataset.pid));break;
  case 'qty':{if(UI.eff&&UI.eff.kind==='gift')break;const f=el.closest('form'),p=byId(f.dataset.pid);UI.qty=Math.max(1,Math.min(20,UI.qty+ +el.dataset.d));updTotals(p);break}
  case 'copy':{const t=el.dataset.t;try{await navigator.clipboard.writeText(t);el.innerHTML=T('copied')}catch(err){const c=(el.closest('.discbox,.keybox,.key-row,.contact,li')||document).querySelector('code');if(c){const r=document.createRange();r.selectNodeContents(c);const s=getSelection();s.removeAllRanges();s.addRange(r)}}break}
@@ -1612,7 +1616,13 @@ document.addEventListener('click',async e=>{
  case 'f-sort':{const k=el.dataset.k;if(UI.fSort===k)UI.fDir*=-1;else{UI.fSort=k;UI.fDir=-1}renderFactory();break}
  case 'f-quick':UI.fSort=el.dataset.k;UI.fDir=-1;UI.fInv=false;renderFactory();break;
  case 'f-row':{if(!i)break;if(matchMedia('(max-width:1099px)').matches){openModal(panelHTML(i))}else{UI.fSel=id;document.querySelectorAll('#ftb tr').forEach(r=>r.classList.toggle('sel',r.dataset.id===id));$('#fpanel').innerHTML=panelHTML(i)}break}
- case 'make':{const p=byId(el.dataset.pid);if(p){openModal(makeHTML(p));updFee()}break}
+ case 'make':{const p=byId(el.dataset.pid);if(!p)break;if(LIVE&&!FAC){closeModal();go('factory');toast(T('facNeed'));break}
+  openModal(makeHTML(p));updFee();
+  /* Live: selling on Tamanna arrives with payments; for now factories declare an outside sale with proof */
+  if(LIVE){const r=$('#t-free');r.checked=true;r.dispatchEvent(new Event('change',{bubbles:true}));const fn=$('#mk-f');if(fn)fn.value=FAC.name}
+  break}
+ case 'fac-logout':facLogout();break;
+ case 'fac-mode':UI.facMode=el.dataset.v;renderFactory();break;
  case 'expand':if(i){UI.expanded.has(id)?UI.expanded.delete(id):UI.expanded.add(id);refreshCard(id)}break;
  }
 });
@@ -1642,7 +1652,7 @@ document.addEventListener('submit',e=>{
   (i.adds||(i.adds=[])).push({at:Date.now(),text:t});i.history.push({at:Date.now(),note:{k:'hAdd'}});UI.editing=null;save();refreshCard(id);if(UI.view==='mine')renderView();toast(T('addT'));
  }else if(kind==='fnote'&&i&&!isOwner(i)&&isMade(i)&&myMakerOf(i)){
   const t=f.elements.t.value.trim();if(t.length<5){f.elements.t.focus();return}const name=myMakerOf(i).factory;
-  i.fnotes=(i.fnotes||[]).filter(n=>n.fac!==myHandle());i.fnotes.push({fac:myHandle(),name,text:t,at:Date.now(),verdict:null});
+  i.fnotes=(i.fnotes||[]).filter(n=>n.fac!==myHandle());i.fnotes.push({fac:myHandle(),name,text:t,at:Date.now(),verdict:null});if(LIVE)dbNote(i,t);
   i.history.push({at:Date.now(),note:{k:'hFacNote',p:name}});UI.editing=null;save();refreshCard(id);toast(T('fnSent'));
  }else if(kind==='edit'&&i&&isOwner(i)&&!isMade(i)){
   const t=f.elements.title.value.trim(),d=f.elements.desc.value.trim();if(t.length<4||!d)return;
@@ -1674,6 +1684,7 @@ document.addEventListener('submit',e=>{
    if(!S.me.facPriv.includes(p.id))S.me.facPriv.push(p.id);
   }
   sync(p);save();closeModal();renderChrome();renderView();toast(T(pub?'publicDone':'privateDone'));
+  if(LIVE&&!pub)dbMake(p,proof,m);
  }else if(kind==='disc'){
   const o=editableOffer(byId(f.dataset.pid),f.dataset.oid);if(!o)return;const d=readDisc(f);if(!d){f.elements.dcode.focus();return}
   o.discount=d;save();closeModal();renderView();toast(T('discSaved'));
@@ -1696,7 +1707,7 @@ document.addEventListener('submit',e=>{
   if(!sel){err.textContent=T('dirPick');err.hidden=false;return}
   const t=byId(sel.value);if(!t||!isOwner(t)||t.status!=='open')return;const inv=t.invites||(t.invites=[]);
   if(inv.includes(h)){err.textContent=T('invDup');err.hidden=false;return}if(inv.length>=3){err.textContent=T('invMax');err.hidden=false;return}
-  inv.push(h);save();$('#mc').innerHTML=facProfileHTML(h);if(UI.view==='mine')renderView();toast(T('invToast')(h));
+  inv.push(h);if(LIVE)dbInvite(t,h,true);save();$('#mc').innerHTML=facProfileHTML(h);if(UI.view==='mine')renderView();toast(T('invToast')(h));
  }else if(kind==='pledge'&&i){
   const v=parseFloat(f.v.value),err=document.getElementById('ple-'+i.id);
   if(!(v>0)){err.textContent=T('plBad');err.hidden=false;f.v.focus();return}
@@ -1711,9 +1722,10 @@ document.addEventListener('submit',e=>{
   const u=UI.thread,i2=u&&byId(u.pid),txt=f.t.value.trim();if(!i2||!txt)return;
   const role=u.role;if(role==='c'&&!isOwner(i2))return;if(role==='f'&&isOwner(i2))return;
   let th=u.tid?findThread(i2,u.tid):null;
-  if(!th){if(role!=='f')return;if(!canContact(i2)){toast(T('contactLimit'));return}th={id:uid(),fac:myHandle(),facName:S.me.factory||'My factory',msgs:[],blocked:false};(i2.threads||(i2.threads=[])).push(th);u.tid=th.id}
+  let isNew=false;
+  if(!th){if(role!=='f')return;if(!canContact(i2)){toast(T('contactLimit'));return}th={id:LIVE?crypto.randomUUID():uid(),fac:myHandle(),facName:LIVE&&FAC?FAC.name:(S.me.factory||'My factory'),msgs:[],blocked:false};(i2.threads||(i2.threads=[])).push(th);u.tid=th.id;isNew=true}
   if(th.blocked)return;if(role==='f'&&th.msgs.length&&!th.msgs.some(m=>m.from==='c'))return;
-  th.msgs.push({id:uid(),from:role,text:txt,at:Date.now()});S.me.tSeen[th.id+role]=Date.now();save();repaintChat();const ci=$('#chatIn');if(ci)ci.focus();if(UI.view==='inbox')renderInbox();if(UI.view==='factory')renderFactory();
+  const msg={id:LIVE?crypto.randomUUID():uid(),from:role,text:txt,at:Date.now()};th.msgs.push(msg);if(LIVE)dbChat(i2,th,msg,isNew);S.me.tSeen[th.id+role]=Date.now();save();repaintChat();const ci=$('#chatIn');if(ci)ci.focus();if(UI.view==='inbox')renderInbox();if(UI.view==='factory')renderFactory();
  }else if(kind==='recover'){
   const k=(f.k.value||'').toUpperCase().replace(/\s+/g,''),m=$('#rmsg');if(LIVE){if(k)dbClaim(k,m);return}const p=S.ideas.find(x=>x.key===k);
   if(!p){m.textContent=T('badKey');return}if(!S.me.claimed.includes(p.id))S.me.claimed.push(p.id);save();m.textContent=T('recovered');renderView();
@@ -1761,7 +1773,7 @@ async function rest(method,path,body,prefer){const h={apikey:SB.key,'Content-Typ
  const r=await fetch(SB.url+'/rest/v1/'+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body)});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}
  if(!r.ok){const e=new Error((j&&(j.message||j.msg))||('http '+r.status));e.status=r.status;throw e}return j}
 const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-function dbFail(e){console.warn('tamanna db',e);toast(/rate_limit/.test(e.message)?T('rateErr'):T('netErr'))}
+function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):T('netErr'))}
 const IDEA_COLS='id,author_name,title,description,lang,image_url,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at';
 let liveAt=0;
 async function liveLoad(){
@@ -1778,6 +1790,7 @@ async function liveLoad(){
    comments:(byIdea[r.id]||[]).map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})),
    history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:o.similarTo||[],diff:o.diff||''})});
  S.me.claimed=S.me.claimed.filter(id=>mineSet.has(id));
+ await liveLoadFac();
  liveAt=Date.now();save();
 }
 async function liveRefresh(){try{await liveLoad();if(!UI.editing&&!UI.composeOpen)render();else updateBadges();if(location.hash.startsWith('#idea-')&&$('#modal').hidden)route()}catch(e){console.warn('tamanna load',e);if(!S.ideas.length)toast(T('netErr'))}}
@@ -1790,6 +1803,69 @@ async function dbSugStatus(id,st){try{await rest('PATCH','suggestions?id=eq.'+id
 async function dbEdit(i){try{await rest('PATCH','ideas?id=eq.'+i.id,{title:i.title,description:i.desc},'return=minimal')}catch(e){dbFail(e)}}
 async function dbDel(id){try{await rest('DELETE','ideas?id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbClaim(k,m){m.textContent='…';try{const id=await rest('POST','rpc/claim_idea',{p_key:k});if(!id){m.textContent=T('badKey');return}S.me.keys[id]=k;await liveLoad();m.textContent=T('recovered');renderView();updateBadges()}catch(e){m.textContent=T('netErr')}}
+/* ---- factories: profiles, makes, notes, invites, private messages ---- */
+const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).push(x)});return m};
+async function liveLoadFac(){
+ const [facs,makes,notes]=await Promise.all([rest('GET','factories?select=handle,name,country,website&limit=2000'),rest('GET','makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc&limit=5000'),rest('GET','factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&limit=5000')]);
+ FACTORIES.length=0;(facs||[]).forEach(f=>FACTORIES.push([f.handle,f.name]));
+ let det=[],invs=[],thr=[],msgs=[];FAC=null;
+ if(sess){const me=await rest('POST','rpc/my_factory',{});FAC=(me&&me[0])||null;if(FAC)S.me.factory=FAC.name;
+  [det,invs,thr]=await Promise.all([rest('POST','rpc/my_make_details',{}),rest('GET','invites?select=idea_id,handle'),rest('GET','threads?select=id,idea_id,handle,factory_name,blocked,created_at')]);
+  if((thr||[]).length)msgs=await rest('GET','messages?select=id,thread_id,sender,body,created_at&order=created_at.asc&limit=10000')}
+ const D=new Map((det||[]).map(d=>[d.id,d])),M=grp(makes,'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id');
+ S.me.facPriv=[];
+ S.ideas.forEach(i=>{
+  /* Latest maker is shown as the product; earlier outside makers stay as history. Proof link and message reach only the creator and that factory. */
+  const ms=(M[i.id]||[]).map(m=>{const d=D.get(m.id)||{};return {id:m.id,fac:m.handle,factory:m.factory_name,proof:d.proof_url||'',msg:d.message||'',mode:'notify',at:Date.parse(m.created_at),handling:3}});
+  i.priv=ms.length?ms[ms.length-1]:null;i.outside=ms.slice(0,-1);i.offers=[];
+  if(FAC&&ms.some(m=>m.fac===FAC.handle))S.me.facPriv.push(i.id);
+  i.fnotes=(N[i.id]||[]).map(n=>({fac:n.handle,name:n.factory_name,text:n.body,at:Date.parse(n.updated_at),verdict:n.verdict||null}));
+  i.invites=(V[i.id]||[]).map(v=>v.handle);
+  i.threads=(TH[i.id]||[]).map(t=>({id:t.id,fac:t.handle,facName:t.factory_name,blocked:t.blocked,msgs:(MS[t.id]||[]).map(m=>({id:m.id,from:m.sender,text:m.body,at:Date.parse(m.created_at)}))}));
+  sync(i);
+ });
+}
+const hq=h=>encodeURIComponent(h);
+async function dbRpc(fn,args){try{await rest('POST','rpc/'+fn,args)}catch(e){dbFail(e)}}
+async function dbMake(i,proof,msg){try{const mine=await rest('GET',`makes?select=id&idea_id=eq.${i.id}&handle=eq.${hq(FAC.handle)}`);
+ if(mine&&mine.length)await rest('PATCH','makes?id=eq.'+mine[0].id,{proof_url:proof,message:msg||null},'return=minimal');
+ else await rest('POST','makes',{idea_id:i.id,proof_url:proof,message:msg||null},'return=minimal')}catch(e){dbFail(e)}liveRefresh()}
+async function dbNote(i,body){try{const q=`idea_id=eq.${i.id}&handle=eq.${hq(FAC.handle)}`,ex=await rest('GET','factory_notes?select=handle&'+q);
+ if(ex&&ex.length)await rest('PATCH','factory_notes?'+q,{body},'return=minimal');else await rest('POST','factory_notes',{idea_id:i.id,body},'return=minimal')}catch(e){dbFail(e)}}
+async function dbInvite(i,h,add){try{if(add)await rest('POST','invites',{idea_id:i.id,handle:h},'return=minimal');else await rest('DELETE',`invites?idea_id=eq.${i.id}&handle=eq.${hq(h)}`)}catch(e){dbFail(e);liveRefresh()}}
+async function dbChat(i,th,m,isNew){try{if(isNew)await rest('POST','threads',{id:th.id,idea_id:i.id},'return=minimal');await rest('POST','messages',{id:m.id,thread_id:th.id,body:m.text},'return=minimal')}
+ catch(e){th.msgs=th.msgs.filter(x=>x!==m);if(isNew&&!th.msgs.length)i.threads=i.threads.filter(x=>x!==th);save();repaintChat();const s=e.message||'';toast(/contact_limit/.test(s)?T('contactLimit'):/wait_reply/.test(s)?T('waitReply'):/blocked/.test(s)?T('blockedF'):T('netErr'))}}
+/* Factory sign-up / login: email + password (real accounts, never anonymous) */
+function facAuthHTML(){const up=UI.facMode!=='login';return `<section class="col"><div class="wl-h"><h2>${I.factory} ${T('facJoinT')}</h2><p class="muted">${T('facJoinSub')}</p></div>
+ <div class="seg" role="group"><button data-act="fac-mode" data-v="signup" class="${up?'on':''}">${T('facSignup')}</button><button data-act="fac-mode" data-v="login" class="${up?'':'on'}">${T('facLogin')}</button></div>
+ <form class="edit" data-form="${up?'fac-signup':'fac-login'}" style="max-width:480px">
+ ${up?`<label class="fld">${T('facNameL')}<input name="name" required minlength="2" maxlength="60" autocomplete="organization"></label>
+ <label class="fld">${T('facHandleL')}<input name="handle" required dir="ltr" maxlength="25" placeholder="@my_factory" autocomplete="off" spellcheck="false"><small class="muted">${T('facHandleHint')}</small></label>
+ <div class="two"><label class="fld">${T('facCountryL')}<input name="country" maxlength="60" autocomplete="country-name"></label><label class="fld">${T('facWebL')}<input name="web" type="url" dir="ltr" maxlength="200" placeholder="https://"></label></div>`:''}
+ <label class="fld">${T('emailL')}<input name="email" type="email" required dir="ltr" autocomplete="email"></label>
+ <label class="fld">${T('pwL')}<input name="pw" type="password" required minlength="8" dir="ltr" autocomplete="${up?'new-password':'current-password'}">${up?`<small class="muted">${T('pwHint')}</small>`:''}</label>
+ <p class="err" id="fa-err" hidden></p><button class="btn pri wide">${up?T('facSignup'):T('facLogin')}</button>
+ ${up?`<p class="muted" style="font-size:12.5px;line-height:1.6">${T('facSignNote')}</p>`:''}</form></section>`}
+async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.pri'),fail=m=>{err.textContent=m;err.hidden=false;btn.disabled=false};err.hidden=true;btn.disabled=true;
+ const email=f.email.value.trim(),pw=f.pw.value;
+ try{let handle='',name='';
+  if(up){handle=f.handle.value.trim().toLowerCase();if(handle[0]!=='@')handle='@'+handle;name=f.name.value.trim();
+   if(!/^@[a-z0-9_]{3,24}$/.test(handle))return fail(T('facHandleHint'));
+   const taken=await rest('GET','factories?select=handle&handle=eq.'+hq(handle));if(taken&&taken.length)return fail(T('handleTaken'))}
+  const j=await authReq(up?'signup':'token?grant_type=password',{email,password:pw});
+  if(!j.access_token)return fail(T('confirmOn'));
+  keepSess(j);
+  if(up)await rest('POST','factories',{handle,name,country:f.country.value.trim()||null,website:f.web.value.trim()||null},'return=minimal');
+  await liveLoad();render();toast(up?T('facWelcome'):T('facHi'));
+ }catch(e){const s=e.message||'';fail(/already registered|already exists/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/duplicate|unique/i.test(s)?T('handleTaken'):/password/i.test(s)?T('pwHint'):T('netErr'))}}
+async function facLogout(){try{if(sess)await fetch(SB.url+'/auth/v1/logout',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+sess.at}})}catch(e){}
+ sess=null;FAC=null;try{localStorage.removeItem(AUTHK)}catch(e){}S.me.token=uid()+uid();S.me.votes={};S.me.reacts={};
+ try{await liveLoad()}catch(e){}render();toast(T('facBye'))}
+document.addEventListener('submit',e=>{const k=e.target.dataset.form;if(k==='fac-signup'||k==='fac-login'){e.preventDefault();facAuth(e.target,k==='fac-signup')}});
+Object.assign(L.ar,{facJoinT:'حساب المصنع',facJoinSub:'سجّل مصنعك لتتصفح الأفكار الأكثر طلباً، وتعلن أنك تصنع فكرة، وتراسل أصحاب الأفكار.',facSignup:'إنشاء حساب مصنع',facLogin:'تسجيل الدخول',facNameL:'اسم المصنع أو الشركة',facHandleL:'اسم المستخدم',facHandleHint:'يبدأ بـ @ ثم ٣ إلى ٢٤ حرفاً إنجليزياً صغيراً أو أرقاماً أو _ . هكذا يوجّه أصحاب الأفكار أفكارهم لك.',facCountryL:'الدولة',facWebL:'الموقع الإلكتروني (اختياري)',emailL:'البريد الإلكتروني',pwL:'كلمة المرور',pwHint:'٨ أحرف على الأقل.',facSignNote:'احفظ بريدك وكلمة المرور جيداً، فاسترجاع كلمة المرور بالبريد غير متاح بعد.',handleTaken:'اسم المستخدم هذا مأخوذ، اختر غيره.',emailTaken:'هذا البريد مسجّل مسبقاً. سجّل الدخول بدلاً من ذلك.',authBad:'البريد أو كلمة المرور غير صحيحة.',confirmOn:'تأكيد البريد مفعّل في إعدادات الموقع؛ يجب إيقافه حالياً.',facWelcome:'أهلاً بك! حساب مصنعك جاهز.',facHi:'أهلاً بعودتك!',facBye:'سجّلت الخروج.',facLogout:'تسجيل الخروج',facNeed:'سجّل حساب مصنع أولاً.'});
+Object.assign(L.en,{facJoinT:'Factory account',facJoinSub:'Register your factory to browse the most-wished ideas, declare that you make an idea, and message creators.',facSignup:'Create factory account',facLogin:'Log in',facNameL:'Factory or company name',facHandleL:'Username',facHandleHint:'Starts with @, then 3–24 lowercase English letters, digits or _. Creators use it to direct ideas to you.',facCountryL:'Country',facWebL:'Website (optional)',emailL:'Email',pwL:'Password',pwHint:'At least 8 characters.',facSignNote:'Keep your email and password safe: password reset by email isn’t available yet.',handleTaken:'That username is taken. Choose another.',emailTaken:'This email is already registered. Log in instead.',authBad:'Wrong email or password.',confirmOn:'Email confirmation is switched on in the site settings; it must be off for now.',facWelcome:'Welcome! Your factory account is ready.',facHi:'Welcome back!',facBye:'Logged out.',facLogout:'Log out',facNeed:'Create a factory account first.'});
+Object.assign(L.zh,{facJoinT:'工厂账户',facJoinSub:'注册你的工厂,浏览最受期待的创意、声明你在生产某个创意,并联系创意作者。',facSignup:'创建工厂账户',facLogin:'登录',facNameL:'工厂或公司名称',facHandleL:'用户名',facHandleHint:'以 @ 开头,后接 3–24 个小写英文字母、数字或 _。作者用它把创意推荐给你。',facCountryL:'国家',facWebL:'网站(可选)',emailL:'电子邮箱',pwL:'密码',pwHint:'至少 8 个字符。',facSignNote:'请妥善保存邮箱和密码,目前暂不支持邮件找回密码。',handleTaken:'该用户名已被占用,请换一个。',emailTaken:'该邮箱已注册,请直接登录。',authBad:'邮箱或密码错误。',confirmOn:'网站设置中开启了邮箱确认,目前需要关闭。',facWelcome:'欢迎!你的工厂账户已就绪。',facHi:'欢迎回来!',facBye:'已退出登录。',facLogout:'退出登录',facNeed:'请先创建工厂账户。'});
+Object.assign(L.tr,{facJoinT:'Fabrika hesabı',facJoinSub:'En çok istenen fikirlere göz atmak, bir fikri ürettiğini bildirmek ve fikir sahipleriyle yazışmak için fabrikanı kaydet.',facSignup:'Fabrika hesabı oluştur',facLogin:'Giriş yap',facNameL:'Fabrika veya şirket adı',facHandleL:'Kullanıcı adı',facHandleHint:'@ ile başlar, ardından 3–24 küçük İngilizce harf, rakam veya _. Fikir sahipleri fikirlerini sana bununla yönlendirir.',facCountryL:'Ülke',facWebL:'Web sitesi (isteğe bağlı)',emailL:'E-posta',pwL:'Şifre',pwHint:'En az 8 karakter.',facSignNote:'E-postanı ve şifreni iyi sakla: e-postayla şifre sıfırlama henüz yok.',handleTaken:'Bu kullanıcı adı alınmış, başka birini seç.',emailTaken:'Bu e-posta zaten kayıtlı. Bunun yerine giriş yap.',authBad:'E-posta veya şifre yanlış.',confirmOn:'Site ayarlarında e-posta onayı açık; şimdilik kapalı olmalı.',facWelcome:'Hoş geldin! Fabrika hesabın hazır.',facHi:'Tekrar hoş geldin!',facBye:'Çıkış yaptın.',facLogout:'Çıkış yap',facNeed:'Önce bir fabrika hesabı oluştur.'});
 Object.assign(L.ar,{netErr:'تعذّر الاتصال. تحقق من الإنترنت وحاول مرة أخرى.',rateErr:'وصلت للحد اليومي. حاول غداً.'});
 Object.assign(L.en,{netErr:'Couldn’t connect. Check your internet and try again.',rateErr:'You’ve reached today’s limit. Try again tomorrow.'});
 Object.assign(L.zh,{netErr:'连接失败,请检查网络后重试。',rateErr:'已达到今日上限,请明天再试。'});
