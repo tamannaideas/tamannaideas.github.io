@@ -203,6 +203,7 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .chip.ok{background:var(--like);color:var(--on-solid)}
 .c-title{font-size:18px;font-weight:800;line-height:1.4}
 .c-img{border-radius:11px;max-height:340px;width:100%;object-fit:cover;background:var(--surface-2)}
+.off-b{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#1D9BF0;color:#fff;font-size:10px;font-weight:900;vertical-align:-2px;margin-inline-start:2px}
 .gal-w{position:relative}
 .gal{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:11px;overscroll-behavior-x:contain}
 .gal::-webkit-scrollbar{display:none}
@@ -1134,7 +1135,7 @@ function cardHTML(i){
  const main=editing&&(!own||isMade(i))?(own?addFormHTML(i):fnoteFormHTML(i)):editing?`<form class="edit" data-form="edit"><label class="fld">${T('fTitle')}<input name="title" id="e-t-${i.id}" value="${title}" required minlength="4" maxlength="90"></label><label class="fld">${T('fDesc')}<textarea name="desc" id="e-d-${i.id}" rows="5" required>${desc}</textarea></label><div class="row"><button class="btn pri sm">${T('save')}</button><button type="button" class="btn ghost sm" data-act="edit-cancel">${T('cancel')}</button>${own&&!isMade(i)?`<button type="button" class="btn danger sm" style="margin-inline-start:auto" data-act="del-idea">${T('delIdea')}</button>`:''}</div>${isMade(i)?`<p class="muted" style="font-size:12.5px;line-height:1.6">${T(own?'revWarn':'propWarn')}</p>`:''}</form>`
   :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${galHTML(imgsOf(i))}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
  return `<article class="card" data-id="${i.id}">
- <div class="c-main"><div class="c-meta"><span class="av">${i.author?esc(i.author[0].toUpperCase()):'?'}</span><b>${i.author?esc(i.author):T('anon')}</b><span>·</span><time>${ago(i.created)}</time>${i.edited?`<span>· ${T('edited')}</span>`:''}${own?`<span class="chip mine">${T('mine')}</span>`:''}</div>${main}</div>
+ <div class="c-main"><div class="c-meta"><span class="av">${i.author?esc(i.author[0].toUpperCase()):'?'}</span><b>${whoHTML(i)}</b><span>·</span><time>${ago(i.created)}</time>${i.edited?`<span>· ${T('edited')}</span>`:''}${own?`<span class="chip mine">${T('mine')}</span>`:''}</div>${main}</div>
  <aside class="c-side">${sideHTML(i,own)}</aside>
  <div class="poll${v?' voted':''}"><p class="poll-q">${T('poll')}</p>${v?`<div class="res"><div class="bar"><i style="width:${pct}%"></i></div><div class="res-t tnum"><b>${pct}%</b> ${T('wishPct')} · ${fmt(tot)} ${T('votes')}</div></div>`:''}<div class="poll-btns"><button class="pb y${v==='yes'?' sel':''}" data-act="vote" data-v="yes" aria-pressed="${v==='yes'}">${I.star}${T('yes')}</button><button class="pb n${v==='no'?' sel':''}" data-act="vote" data-v="no" aria-pressed="${v==='no'}">${T('no')}</button></div></div>
  <div class="c-actions"><button class="ab like${r===1?' on':''}" data-act="react" data-v="1" aria-pressed="${r===1}" aria-label="${T('like')}">${I.up}<span class="tnum">${fmt(likeN(i))}</span></button><button class="ab dis${r===-1?' on':''}" data-act="react" data-v="-1" aria-pressed="${r===-1}" aria-label="${T('dislike')}">${I.down}<span class="tnum">${fmt(disN(i))}</span></button><button class="ab" data-act="sug" aria-expanded="${openC}">${I.chat}<span>${T('suggestions')} (${fmt(own?visComments(i,own).length:pubCount(i))})</span>${own&&pendCount(i)?`<span class="badge-n">${fmt(pendCount(i))}</span>`:''}</button><button class="ab" data-act="share" aria-label="${T('share')}">${I.share}<span>${T('share')}</span></button>${canEdit(i)&&!editing?`<button class="ab edit" data-act="edit">${own?I.pen:'🏭'}<span>${T(!own?'fnBtn':isMade(i)?'addBtn':'edit')}</span></button>`:''}</div>
@@ -1218,7 +1219,7 @@ function renderWish(){
 const SORTS={yes:yesN,pct:pctOf,vel:vel,sug:pubCount,created:i=>i.created};
 function facList(){let l=S.ideas.slice();if(UI.fInv)l=l.filter(i=>(i.invites||[]).includes(myHandle()));if(UI.q){const q=UI.q.toLowerCase();l=l.filter(i=>(both(i.title)+' '+both(i.desc)).toLowerCase().includes(q))}const k=SORTS[UI.fSort];return l.sort((a,b)=>(k(a)-k(b))*UI.fDir)}
 function statusChip(i){if(isPublic(i)){const d=discOf(i);return `<span class="badge ver">${I.check}${T('stPub')}</span>${d?` <span class="badge disc">${I.tag}${d.pct}%</span>`:''}`}if(i.status==='private')return `<span class="badge priv">${S.me.facPriv.includes(i.id)?T('stPriv'):T('stOutsideRow')}</span>`;return `<span class="badge open">${T('stOpen')}</span>`}
-function rowsHTML(){const l=facList();if(!l.length)return `<tr><td colspan="6" class="p-empty">${T('noRes')}</td></tr>`;return l.map(i=>{const p=pctOf(i);return `<tr data-id="${i.id}" data-act="f-row" tabindex="0" class="${UI.fSel===i.id?'sel':''}"><td class="t-idea"><b>${esc(tx(i.title))}</b>${(i.invites||[]).includes(myHandle())?`<span class="badge disc" style="margin-block:3px">📩 ${T('invForYou')}</span>`:''}<small>${i.author?esc(i.author):T('anon')} · ${ago(i.created)}</small></td><td class="num">${fmt(yesN(i))}</td><td class="num"><span class="pct"><i style="width:${p}%"></i></span>${p}%</td><td class="num vel">+${fmt(vel(i))}</td><td class="num">${fmt(pubCount(i))}</td><td>${statusChip(i)}</td></tr>`}).join('')}
+function rowsHTML(){const l=facList();if(!l.length)return `<tr><td colspan="6" class="p-empty">${T('noRes')}</td></tr>`;return l.map(i=>{const p=pctOf(i);return `<tr data-id="${i.id}" data-act="f-row" tabindex="0" class="${UI.fSel===i.id?'sel':''}"><td class="t-idea"><b>${esc(tx(i.title))}</b>${(i.invites||[]).includes(myHandle())?`<span class="badge disc" style="margin-block:3px">📩 ${T('invForYou')}</span>`:''}<small>${whoHTML(i)} · ${ago(i.created)}</small></td><td class="num">${fmt(yesN(i))}</td><td class="num"><span class="pct"><i style="width:${p}%"></i></span>${p}%</td><td class="num vel">+${fmt(vel(i))}</td><td class="num">${fmt(pubCount(i))}</td><td>${statusChip(i)}</td></tr>`}).join('')}
 /* Factory KPIs answer "what should I do now?" — each one is a shortcut to that place */
 function kpisHTML(){
  const wk=Date.now()-7*864e5,open=S.ideas.filter(i=>i.status==='open');
@@ -1234,7 +1235,7 @@ function kpisHTML(){
 function panelHTML(i){
  if(!i)return `<p class="p-empty">${T('pickRow')}</p>`;
  const tl=likeN(i)+disN(i),lr=tl?Math.round(likeN(i)*100/tl):0,sugs=i.comments.filter(c=>c.adopted&&!c.dismissed).slice(-3).reverse();
- return `<span>${statusChip(i)}</span><h3>${esc(tx(i.title))}</h3><p class="muted" style="font-size:13px">${i.author?esc(i.author):T('anon')} · ${ago(i.created)}</p>${galHTML(imgsOf(i))}<p style="white-space:pre-line">${esc(tx(i.desc))}</p>${olderOf(i)?`<p class="late-t">⚠️ ${T('olderFirst')} <a href="#idea-${olderOf(i).id}" style="color:inherit">${esc(tx(olderOf(i).title))}</a></p>`:''}${simNoteHTML(i)}${trHTML('i_'+i.id)}
+ return `<span>${statusChip(i)}</span><h3>${esc(tx(i.title))}</h3><p class="muted" style="font-size:13px">${whoHTML(i)} · ${ago(i.created)}</p>${galHTML(imgsOf(i))}<p style="white-space:pre-line">${esc(tx(i.desc))}</p>${olderOf(i)?`<p class="late-t">⚠️ ${T('olderFirst')} <a href="#idea-${olderOf(i).id}" style="color:inherit">${esc(tx(olderOf(i).title))}</a></p>`:''}${simNoteHTML(i)}${trHTML('i_'+i.id)}
  <div class="p-stats"><div><b>${fmt(yesN(i))}</b><span>${T('colWish')}</span></div><div><b>${pctOf(i)}%</b><span>${T('colYes')}</span></div><div><b class="vel">+${fmt(vel(i))}</b><span>${T('colVel')}</span></div><div><b>${lr}%</b><span>${T('likesRatio')}</span></div></div>${pledgeLineHTML(i)}${demandHTML(i)}
  ${sugs.length?`<div><h3 style="font-size:13px;margin-bottom:6px">${T('topSugs')}</h3><ul class="p-sugs">${sugs.map(c=>`<li>${esc(tx(c.text))}</li>`).join('')}</ul></div>`:''}
  ${sellActHTML(i)}${msgBtn(i,'wide')}`;
@@ -1651,6 +1652,7 @@ document.addEventListener('submit',e=>{
   if(title.length<4)return fail(T('minLen'),$('#c-title'));
   if(desc.length<5)return fail(T('fDescPh'),$('#c-desc'));
   if(!anon&&!name)return fail(T('needName'),$('#c-name'));
+  if(LIVE&&!anon&&!OFFICIAL&&isReservedName(name))return fail(T('nameReserved'),$('#c-name'));
   const sims=findSimilar(title,desc),top=sims[0];let diff='';
   if(isDup(top)){updateSimilar();err.innerHTML=`${esc(T('dupBlock'))} <button type="button" class="link" data-act="peek" data-pid="${top[0].id}">${esc(T('openExisting'))}</button>`;err.hidden=false;return}
   if(top){diff=(UI.draft.diff||'').trim();if(diff.length<15){$('#diffF').hidden=false;return fail(T('diffShort'),$('#c-diff'))}}
@@ -1771,7 +1773,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Enter'&&e.target.matches('tr[data-act="f-row"],.hero-mini[data-act="hero-peek"],.hero[data-act="hero-tap"]'))e.target.click();
  if(e.key==='Enter'&&e.target.id==='codeIn'){e.preventDefault();applyCode(byId(e.target.closest('form').dataset.pid))}
 });
-function route(){const h=location.hash.slice(1);if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
+function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
 window.addEventListener('hashchange',route);
 
 /* ---------- live data layer (Supabase over plain fetch: no library, fast load) ----------
@@ -1788,8 +1790,8 @@ async function rest(method,path,body,prefer){const h={apikey:SB.key,'Content-Typ
  const r=await fetch(SB.url+'/rest/v1/'+path,{method,headers:h,body:body===undefined?undefined:JSON.stringify(body)});const t=await r.text();let j=null;try{j=t?JSON.parse(t):null}catch(e){}
  if(!r.ok){const e=new Error((j&&(j.message||j.msg))||('http '+r.status));e.status=r.status;throw e}return j}
 const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
-function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):T('netErr'))}
-const IDEA_COLS='id,author_name,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at';
+function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):/reserved_name/.test(m)?T('nameReserved'):T('netErr'))}
+const IDEA_COLS='id,author_name,official,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at';
 let liveAt=0;
 async function liveLoad(){
  const [rows,sugs]=await Promise.all([rest('GET',`ideas?select=${IDEA_COLS}&order=created_at.desc&limit=1000`),rest('GET','suggestions?select=id,idea_id,author_name,body,status,created_at&order=created_at.asc&limit=5000')]);
@@ -1800,7 +1802,7 @@ async function liveLoad(){
  S.me.reacts={};(reacts||[]).forEach(v=>{S.me.reacts[v.idea_id]=v.value});
  const byIdea={};(sugs||[]).forEach(s=>{(byIdea[s.idea_id]||(byIdea[s.idea_id]=[])).push(s)});
  S.ideas=(rows||[]).map(r=>{const o=old.get(r.id)||{},own=mineSet.has(r.id),v=S.me.votes[r.id],rc=S.me.reacts[r.id]||0;
-  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
+  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,official:!!r.official,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
    created:Date.parse(r.created_at),yes:r.yes_count-(v==='yes'?1:0),no:r.no_count-(v==='no'?1:0),likes:r.like_count-(rc===1?1:0),dislikes:r.dislike_count-(rc===-1?1:0),w7:o.w7||0,
    comments:(byIdea[r.id]||[]).map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})),
    history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:o.similarTo||[],diff:o.diff||''})});
@@ -1832,7 +1834,9 @@ async function liveLoadFac(){
  const [facs,makes,notes]=await Promise.all([rest('GET','factories?select=handle,name,country,website&limit=2000'),rest('GET','makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc&limit=5000'),rest('GET','factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&limit=5000')]);
  FACTORIES.length=0;(facs||[]).forEach(f=>FACTORIES.push([f.handle,f.name]));
  let det=[],invs=[],thr=[],msgs=[];FAC=null;
+ OFFICIAL=false;
  if(sess){const me=await rest('POST','rpc/my_factory',{});FAC=(me&&me[0])||null;if(FAC)S.me.factory=FAC.name;
+  try{OFFICIAL=!!(await rest('POST','rpc/is_official',{}))}catch(e){}
   [det,invs,thr]=await Promise.all([rest('POST','rpc/my_make_details',{}),rest('GET','invites?select=idea_id,handle'),rest('GET','threads?select=id,idea_id,handle,factory_name,blocked,created_at')]);
   if((thr||[]).length)msgs=await rest('GET','messages?select=id,thread_id,sender,body,created_at&order=created_at.asc&limit=10000')}
  const D=new Map((det||[]).map(d=>[d.id,d])),M=grp(makes,'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id');
@@ -1874,6 +1878,7 @@ async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.
  try{let handle='',name='';
   if(up){handle=f.handle.value.trim().toLowerCase();if(handle[0]!=='@')handle='@'+handle;name=f.name.value.trim();
    if(!/^@[a-z0-9_]{3,24}$/.test(handle))return fail(T('facHandleHint'));
+   if(!OFFICIAL&&(isReservedName(handle)||isReservedName(name)))return fail(T('nameReserved'));
    const taken=await rest('GET','factories?select=handle&handle=eq.'+hq(handle));if(taken&&taken.length)return fail(T('handleTaken'))}
   const j=await authReq(up?'signup':'token?grant_type=password',{email,password:pw});
   if(!j.access_token)return fail(T('confirmOn'));
@@ -1881,7 +1886,26 @@ async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.
   if(up)await rest('POST','factories',{handle,name,country:f.country.value.trim()||null,website:f.web.value.trim()||null},'return=minimal');
   await liveLoad();render();toast(up?T('facWelcome'):T('facHi'));
  }catch(e){const s=e.message||'';fail(/already registered|already exists/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/duplicate|unique/i.test(s)?T('handleTaken'):/password/i.test(s)?T('pwHint'):T('netErr'))}}
-async function facLogout(){try{if(sess)await fetch(SB.url+'/auth/v1/logout',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+sess.at}})}catch(e){}
+/* ---- official "Tamanna Team" account: hidden page at #team; becoming official is done only in the SQL Editor ---- */
+const TEAM_NAME='Tamanna Team';
+let OFFICIAL=false;
+const normName=s=>String(s||'').toLowerCase().replace(/[ً-ْٰـ\s\p{P}\p{S}]/gu,'').replace(/[إأآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه');
+const isReservedName=s=>{const n=normName(s);return !!s&&/تمني|تمنا|tamann|tamana|tamenna/.test(n)};
+function whoHTML(i){return `${i.author?esc(i.author):T('anon')}${i.official?` <span class="off-b" title="${T('officialL')}" aria-label="${T('officialL')}">✓</span>`:''}`}
+function teamHTML(){return `<h2>✓ ${T('teamT')}</h2>${OFFICIAL?`<p class="ok-t">${T('teamIn')}</p><button class="btn" data-act="team-logout">${T('facLogout')}</button>`:
+ `${sess&&FAC===null&&!OFFICIAL&&S.me.teamTried?`<p class="err">${T('teamNot')}</p>`:''}<form class="edit" data-form="team-login"><label class="fld">${T('emailL')}<input name="email" type="email" required dir="ltr" autocomplete="email"></label><label class="fld">${T('pwL')}<input name="pw" type="password" required minlength="8" dir="ltr" autocomplete="current-password"></label><p class="err" id="tm-err" hidden></p><div class="row"><button class="btn pri">${T('facLogin')}</button><button type="button" class="btn ghost" data-act="team-signup">${T('teamCreate')}</button></div><p class="muted" style="font-size:12.5px;line-height:1.6">${T('teamNote')}</p></form>`}`}
+async function teamAuth(f,up){const err=$('#tm-err'),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;
+ if(!f.reportValidity())return;
+ try{const j=await authReq(up?'signup':'token?grant_type=password',{email:f.email.value.trim(),password:f.pw.value});if(!j.access_token)return fail(T('confirmOn'));
+  keepSess(j);S.me.teamTried=true;await liveLoad();if(OFFICIAL){S.me.name=TEAM_NAME;save()}render();openModal(teamHTML(),'team');toast(OFFICIAL?T('teamIn'):T('teamNot'))}
+ catch(e){const s=e.message||'';fail(/already registered|already exists/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/password/i.test(s)?T('pwHint'):T('netErr'))}}
+document.addEventListener('submit',e=>{if(e.target.dataset.form==='team-login'){e.preventDefault();teamAuth(e.target,false)}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="team-signup"],[data-act="team-logout"]');if(!b)return;if(b.dataset.act==='team-signup')teamAuth(b.closest('form'),true);else{facLogout().then(()=>{if(UI.modal==='team')openModal(teamHTML(),'team')})}});
+Object.assign(L.ar,{officialL:'حساب رسمي',teamT:'حساب Tamanna Team الرسمي',teamIn:'أنت داخل الحساب الرسمي Tamanna Team ✓. أفكارك تُنشر بهذا الاسم مع علامة ✓.',teamNot:'هذا الحساب ليس رسمياً بعد. فعّله من Supabase أولاً.',teamCreate:'إنشاء الحساب',teamNote:'هذه الصفحة لصاحب الموقع فقط. الاسم «Tamanna Team» وأي اسم يشبه «تمنّى» محجوز للحساب الرسمي.',nameReserved:'هذا الاسم محجوز لحساب Tamanna Team الرسمي. اختر اسماً آخر.'});
+Object.assign(L.en,{officialL:'Official account',teamT:'Official Tamanna Team account',teamIn:'You’re signed in as the official Tamanna Team ✓. Your ideas are posted under this name with a ✓.',teamNot:'This account isn’t official yet. Activate it in Supabase first.',teamCreate:'Create account',teamNote:'This page is for the site owner only. “Tamanna Team” and any name resembling “Tamanna” are reserved for the official account.',nameReserved:'This name is reserved for the official Tamanna Team account. Choose another.'});
+Object.assign(L.zh,{officialL:'官方账户',teamT:'Tamanna Team 官方账户',teamIn:'你已登录 Tamanna Team 官方账户 ✓。你的创意将以此名称发布并带有 ✓。',teamNot:'该账户尚未成为官方账户,请先在 Supabase 中启用。',teamCreate:'创建账户',teamNote:'此页面仅供网站所有者使用。“Tamanna Team”及任何类似“Tamanna”的名称均为官方账户保留。',nameReserved:'该名称为 Tamanna Team 官方账户保留,请换一个。'});
+Object.assign(L.tr,{officialL:'Resmi hesap',teamT:'Resmi Tamanna Team hesabı',teamIn:'Resmi Tamanna Team olarak giriş yaptın ✓. Fikirlerin bu adla ve ✓ ile yayınlanır.',teamNot:'Bu hesap henüz resmi değil. Önce Supabase’de etkinleştir.',teamCreate:'Hesap oluştur',teamNote:'Bu sayfa yalnızca site sahibi içindir. “Tamanna Team” ve “Tamanna”ya benzeyen her ad resmi hesaba ayrılmıştır.',nameReserved:'Bu ad resmi Tamanna Team hesabına ayrılmıştır. Başka bir ad seç.'});
+async function facLogout(){OFFICIAL=false;try{if(sess)await fetch(SB.url+'/auth/v1/logout',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+sess.at}})}catch(e){}
  sess=null;FAC=null;try{localStorage.removeItem(AUTHK)}catch(e){}S.me.token=uid()+uid();S.me.votes={};S.me.reacts={};
  try{await liveLoad()}catch(e){}render();toast(T('facBye'))}
 document.addEventListener('submit',e=>{const k=e.target.dataset.form;if(k==='fac-signup'||k==='fac-login'){e.preventDefault();facAuth(e.target,k==='fac-signup')}});
