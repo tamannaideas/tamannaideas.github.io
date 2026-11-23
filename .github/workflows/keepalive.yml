@@ -1,0 +1,14 @@
+# Keeps the free Supabase database awake (it pauses after 7 days with no visits).
+# Runs on GitHub's servers every 3 days, even when your computer is off.
+# If the database ever stops answering, this run fails and GitHub emails you.
+name: keep-database-awake
+on:
+  schedule:
+    - cron: '0 6 */3 * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase
+        run: curl -fsS "https://twouinzecjvfrxbgycrb.supabase.co/rest/v1/ideas?select=id&limit=1&apikey=sb_publishable_HW-w2G9UpVHaBs2n2xhFXg_odjjPt4i" > /dev/null
