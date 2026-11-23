@@ -205,7 +205,7 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .c-img{border-radius:11px;max-height:340px;width:100%;object-fit:cover;background:var(--surface-2)}
 .c-desc{color:var(--fg);opacity:.9;white-space:pre-line;overflow-wrap:anywhere}
 /* Live site, milestone 1: marketplace & factory tools are still demo-only, so they stay hidden */
-body.live [data-act="skip"],body.live .upl,body.live .msec:has([data-act="reset"]),body.live .fac-top .seg:has([data-act="f-tab"]),
+body.live [data-act="skip"],body.live .msec:has([data-act="reset"]),body.live .fac-top .seg:has([data-act="f-tab"]),
 body.live .tier:has(#t-pub),body.live .giftf,body.live .fld:has(#mk-c),body.live .two:has(#mk-p),body.live .fld:has(#mk-f){display:none!important}
 .adds{display:flex;flex-direction:column;gap:6px}.add{border-inline-start:3px solid var(--pri);padding:4px 10px;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
 .fnote{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;background:var(--surface-2)}
@@ -1640,7 +1640,7 @@ document.addEventListener('submit',e=>{
   if(isDup(top)){updateSimilar();err.innerHTML=`${esc(T('dupBlock'))} <button type="button" class="link" data-act="peek" data-pid="${top[0].id}">${esc(T('openExisting'))}</button>`;err.hidden=false;return}
   if(top){diff=(UI.draft.diff||'').trim();if(diff.length<15){$('#diffF').hidden=false;return fail(T('diffShort'),$('#c-diff'))}}
   if(!anon)S.me.name=name;
-  const idea={id:LIVE?crypto.randomUUID():uid(),live:LIVE||undefined,title,desc,img:LIVE?'':UI.draft.img,author:anon?null:name,owner:S.me.token,key:genKey(),created:Date.now(),yes:0,no:0,likes:0,dislikes:0,w7:0,comments:[],history:[],status:'open',product:null,edited:false,similarTo:sims.map(s=>s[0].id),diff};
+  const idea={id:LIVE?crypto.randomUUID():uid(),live:LIVE||undefined,title,desc,img:UI.draft.img,author:anon?null:name,owner:S.me.token,key:genKey(),created:Date.now(),yes:0,no:0,likes:0,dislikes:0,w7:0,comments:[],history:[],status:'open',product:null,edited:false,similarTo:sims.map(s=>s[0].id),diff};
   S.ideas.unshift(idea);save();UI.composeOpen=false;UI.draft={title:'',desc:'',img:'',anon,diff:''};UI.tab='new';UI.limit=12;renderChrome();renderView();
   const c=document.querySelector(`.card[data-id="${idea.id}"]`);if(c){c.classList.add('fresh');c.scrollIntoView({block:'center',behavior:RM.matches?'auto':'smooth'})}
   toast(T('toastPosted'));setTimeout(()=>openModal(keyHTML(idea)),450);
@@ -1794,14 +1794,20 @@ async function liveLoad(){
  liveAt=Date.now();save();
 }
 async function liveRefresh(){try{await liveLoad();if(!UI.editing&&!UI.composeOpen)render();else updateBadges();if(location.hash.startsWith('#idea-')&&$('#modal').hidden)route()}catch(e){console.warn('tamanna load',e);if(!S.ideas.length)toast(T('netErr'))}}
-async function dbPost(i){try{S.me.keys[i.id]=i.key;save();await rest('POST','ideas',{id:i.id,title:i.title,description:i.desc,lang:S.me.lang,author_name:i.author||null,key_hash:await sha256(i.key)},'return=minimal');i.owner=S.me.token;save()}
+/* Image: already shrunk to ≤900px JPEG in the browser; stored under the poster's own folder, then linked to the idea */
+async function uploadImg(id,dataUrl){const at=await token(),blob=await (await fetch(dataUrl)).blob(),path=`${sess.uid}/${id}.jpg`;
+ const r=await fetch(`${SB.url}/storage/v1/object/idea-images/${path}`,{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+at,'Content-Type':'image/jpeg'},body:blob});
+ if(!r.ok)throw new Error('upload '+r.status);return `${SB.url}/storage/v1/object/public/idea-images/${path}`}
+async function dbPost(i){try{S.me.keys[i.id]=i.key;save();let image_url=null;
+ if(i.img&&i.img.startsWith('data:')){try{image_url=await uploadImg(i.id,i.img)}catch(e){console.warn('tamanna image',e);toast(T('imgErr'))}}
+ await rest('POST','ideas',{id:i.id,title:i.title,description:i.desc,lang:S.me.lang,author_name:i.author||null,key_hash:await sha256(i.key),image_url},'return=minimal');i.owner=S.me.token;if(image_url)i.img=image_url;save()}
  catch(e){S.ideas=S.ideas.filter(x=>x.id!==i.id);delete S.me.keys[i.id];save();closeModal();renderView();dbFail(e)}}
 async function dbVote(id,v){try{if(v)await rest('POST','votes?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal');else await rest('DELETE','votes?idea_id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbReact(id,v){try{if(v)await rest('POST','reactions?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal');else await rest('DELETE','reactions?idea_id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbSug(i,c,own){try{await rest('POST','suggestions',{id:c.id,idea_id:i.id,body:c.text,author_name:c.author||null},'return=minimal');if(own)await rest('PATCH','suggestions?id=eq.'+c.id,{status:'adopted'},'return=minimal')}catch(e){i.comments=i.comments.filter(x=>x!==c);save();refreshCard(i.id);dbFail(e)}}
 async function dbSugStatus(id,st){try{await rest('PATCH','suggestions?id=eq.'+id,{status:st},'return=minimal')}catch(e){dbFail(e)}}
 async function dbEdit(i){try{await rest('PATCH','ideas?id=eq.'+i.id,{title:i.title,description:i.desc},'return=minimal')}catch(e){dbFail(e)}}
-async function dbDel(id){try{await rest('DELETE','ideas?id=eq.'+id)}catch(e){dbFail(e)}}
+async function dbDel(id){try{await rest('DELETE','ideas?id=eq.'+id);if(sess)fetch(`${SB.url}/storage/v1/object/idea-images/${sess.uid}/${id}.jpg`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+sess.at}}).catch(()=>{})}catch(e){dbFail(e)}}
 async function dbClaim(k,m){m.textContent='…';try{const id=await rest('POST','rpc/claim_idea',{p_key:k});if(!id){m.textContent=T('badKey');return}S.me.keys[id]=k;await liveLoad();m.textContent=T('recovered');renderView();updateBadges()}catch(e){m.textContent=T('netErr')}}
 /* ---- factories: profiles, makes, notes, invites, private messages ---- */
 const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).push(x)});return m};
@@ -1866,6 +1872,7 @@ Object.assign(L.ar,{facJoinT:'حساب المصنع',facJoinSub:'سجّل مصن
 Object.assign(L.en,{facJoinT:'Factory account',facJoinSub:'Register your factory to browse the most-wished ideas, declare that you make an idea, and message creators.',facSignup:'Create factory account',facLogin:'Log in',facNameL:'Factory or company name',facHandleL:'Username',facHandleHint:'Starts with @, then 3–24 lowercase English letters, digits or _. Creators use it to direct ideas to you.',facCountryL:'Country',facWebL:'Website (optional)',emailL:'Email',pwL:'Password',pwHint:'At least 8 characters.',facSignNote:'Keep your email and password safe: password reset by email isn’t available yet.',handleTaken:'That username is taken. Choose another.',emailTaken:'This email is already registered. Log in instead.',authBad:'Wrong email or password.',confirmOn:'Email confirmation is switched on in the site settings; it must be off for now.',facWelcome:'Welcome! Your factory account is ready.',facHi:'Welcome back!',facBye:'Logged out.',facLogout:'Log out',facNeed:'Create a factory account first.'});
 Object.assign(L.zh,{facJoinT:'工厂账户',facJoinSub:'注册你的工厂,浏览最受期待的创意、声明你在生产某个创意,并联系创意作者。',facSignup:'创建工厂账户',facLogin:'登录',facNameL:'工厂或公司名称',facHandleL:'用户名',facHandleHint:'以 @ 开头,后接 3–24 个小写英文字母、数字或 _。作者用它把创意推荐给你。',facCountryL:'国家',facWebL:'网站(可选)',emailL:'电子邮箱',pwL:'密码',pwHint:'至少 8 个字符。',facSignNote:'请妥善保存邮箱和密码,目前暂不支持邮件找回密码。',handleTaken:'该用户名已被占用,请换一个。',emailTaken:'该邮箱已注册,请直接登录。',authBad:'邮箱或密码错误。',confirmOn:'网站设置中开启了邮箱确认,目前需要关闭。',facWelcome:'欢迎!你的工厂账户已就绪。',facHi:'欢迎回来!',facBye:'已退出登录。',facLogout:'退出登录',facNeed:'请先创建工厂账户。'});
 Object.assign(L.tr,{facJoinT:'Fabrika hesabı',facJoinSub:'En çok istenen fikirlere göz atmak, bir fikri ürettiğini bildirmek ve fikir sahipleriyle yazışmak için fabrikanı kaydet.',facSignup:'Fabrika hesabı oluştur',facLogin:'Giriş yap',facNameL:'Fabrika veya şirket adı',facHandleL:'Kullanıcı adı',facHandleHint:'@ ile başlar, ardından 3–24 küçük İngilizce harf, rakam veya _. Fikir sahipleri fikirlerini sana bununla yönlendirir.',facCountryL:'Ülke',facWebL:'Web sitesi (isteğe bağlı)',emailL:'E-posta',pwL:'Şifre',pwHint:'En az 8 karakter.',facSignNote:'E-postanı ve şifreni iyi sakla: e-postayla şifre sıfırlama henüz yok.',handleTaken:'Bu kullanıcı adı alınmış, başka birini seç.',emailTaken:'Bu e-posta zaten kayıtlı. Bunun yerine giriş yap.',authBad:'E-posta veya şifre yanlış.',confirmOn:'Site ayarlarında e-posta onayı açık; şimdilik kapalı olmalı.',facWelcome:'Hoş geldin! Fabrika hesabın hazır.',facHi:'Tekrar hoş geldin!',facBye:'Çıkış yaptın.',facLogout:'Çıkış yap',facNeed:'Önce bir fabrika hesabı oluştur.'});
+Object.assign(L.ar,{imgErr:'تعذّر رفع الصورة، فنُشرت الفكرة بدونها.'});Object.assign(L.en,{imgErr:'Couldn’t upload the image, so the idea was posted without it.'});Object.assign(L.zh,{imgErr:'图片上传失败,创意已在无图的情况下发布。'});Object.assign(L.tr,{imgErr:'Görsel yüklenemedi, fikir görselsiz yayınlandı.'});
 Object.assign(L.ar,{netErr:'تعذّر الاتصال. تحقق من الإنترنت وحاول مرة أخرى.',rateErr:'وصلت للحد اليومي. حاول غداً.'});
 Object.assign(L.en,{netErr:'Couldn’t connect. Check your internet and try again.',rateErr:'You’ve reached today’s limit. Try again tomorrow.'});
 Object.assign(L.zh,{netErr:'连接失败,请检查网络后重试。',rateErr:'已达到今日上限,请明天再试。'});
