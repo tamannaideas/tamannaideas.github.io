@@ -203,6 +203,14 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .chip.ok{background:var(--like);color:var(--on-solid)}
 .c-title{font-size:18px;font-weight:800;line-height:1.4}
 .c-img{border-radius:11px;max-height:340px;width:100%;object-fit:cover;background:var(--surface-2)}
+.gal-w{position:relative}
+.gal{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:11px;overscroll-behavior-x:contain}
+.gal::-webkit-scrollbar{display:none}
+.gal .c-img{flex:0 0 100%;scroll-snap-align:center;height:340px;max-height:none;object-fit:contain}
+.gal-n{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.62);color:#fff;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;pointer-events:none}
+.gal-b{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:22px;line-height:1;display:grid;place-items:center}
+.gal-b.prev-b{left:8px}.gal-b.next-b{right:8px}
+@media (hover:none){.gal-b{display:none}}
 .c-desc{color:var(--fg);opacity:.9;white-space:pre-line;overflow-wrap:anywhere}
 /* Live site, milestone 1: marketplace & factory tools are still demo-only, so they stay hidden */
 body.live [data-act="skip"],body.live .msec:has([data-act="reset"]),body.live .fac-top .seg:has([data-act="f-tab"]),
@@ -1124,7 +1132,7 @@ function cardHTML(i){
  const own=isOwner(i),v=vote(i),r=react(i),y=yesN(i),tot=y+noN(i),pct=tot?Math.round(y*100/tot):0;
  const title=esc(tx(i.title)),desc=esc(tx(i.desc)),long=tx(i.desc).length>170,ex=UI.expanded.has(i.id),editing=UI.editing===i.id,openC=UI.openC.has(i.id);
  const main=editing&&(!own||isMade(i))?(own?addFormHTML(i):fnoteFormHTML(i)):editing?`<form class="edit" data-form="edit"><label class="fld">${T('fTitle')}<input name="title" id="e-t-${i.id}" value="${title}" required minlength="4" maxlength="90"></label><label class="fld">${T('fDesc')}<textarea name="desc" id="e-d-${i.id}" rows="5" required>${desc}</textarea></label><div class="row"><button class="btn pri sm">${T('save')}</button><button type="button" class="btn ghost sm" data-act="edit-cancel">${T('cancel')}</button>${own&&!isMade(i)?`<button type="button" class="btn danger sm" style="margin-inline-start:auto" data-act="del-idea">${T('delIdea')}</button>`:''}</div>${isMade(i)?`<p class="muted" style="font-size:12.5px;line-height:1.6">${T(own?'revWarn':'propWarn')}</p>`:''}</form>`
-  :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${i.img?`<img class="c-img" src="${i.img}" alt="" loading="lazy" decoding="async">`:''}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
+  :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${galHTML(imgsOf(i))}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
  return `<article class="card" data-id="${i.id}">
  <div class="c-main"><div class="c-meta"><span class="av">${i.author?esc(i.author[0].toUpperCase()):'?'}</span><b>${i.author?esc(i.author):T('anon')}</b><span>·</span><time>${ago(i.created)}</time>${i.edited?`<span>· ${T('edited')}</span>`:''}${own?`<span class="chip mine">${T('mine')}</span>`:''}</div>${main}</div>
  <aside class="c-side">${sideHTML(i,own)}</aside>
@@ -1156,7 +1164,7 @@ function composeHTML(){
  <div id="similar"></div>
  <label class="fld">${T('fDesc')}<textarea id="c-desc" name="desc" rows="4" maxlength="2000" placeholder="${T('fDescPh')}">${esc(d.desc)}</textarea></label><p class="muted" style="font-size:12.5px;line-height:1.6;margin-top:-4px">💡 ${T('descTip')}</p>
  <label class="fld diff-f" id="diffF" hidden>${T('diffL')}<textarea id="c-diff" name="diff" rows="2" maxlength="400" placeholder="${T('diffPh')}">${esc(d.diff||'')}</textarea></label>
- <div class="row"><label class="upl">${I.img}<span>${T('fImg')}</span><input type="file" id="c-img" accept="image/*"></label>${d.img?`<div class="prev"><img src="${d.img}" alt=""><button type="button" data-act="img-clear" aria-label="${T('cancel')}">×</button></div>`:''}</div>
+ <div class="row">${(d.imgs||[]).length<MAX_IMGS?`<label class="upl">${I.img}<span>${T('fImg')}</span><input type="file" id="c-img" accept="image/*" multiple></label>`:''}${(d.imgs||[]).map((u,k)=>`<div class="prev"><img src="${u}" alt=""><button type="button" data-act="img-clear" data-k="${k}" aria-label="${T('cancel')}">×</button></div>`).join('')}</div>
  <fieldset class="who"><legend>${T('postAs')}</legend><label class="pill"><input type="radio" name="who" value="anon" id="w-anon" ${d.anon?'checked':''}><span>${T('anon')}</span></label><label class="pill"><input type="radio" name="who" value="user" id="w-user" ${d.anon?'':'checked'}><span>${T('username')}</span></label><input class="inp" id="c-name" name="name" placeholder="${T('unamePh')}" maxlength="24" value="${esc(S.me.name)}" ${d.anon?'hidden':''} style="flex:1;min-width:140px" aria-label="${T('username')}"></fieldset>
  <p class="err" id="c-err" hidden></p>
  <div class="row"><button class="btn pri">${T('publish')}</button><button type="button" class="btn ghost" data-act="compose-cancel">${T('cancel')}</button></div>
@@ -1226,7 +1234,7 @@ function kpisHTML(){
 function panelHTML(i){
  if(!i)return `<p class="p-empty">${T('pickRow')}</p>`;
  const tl=likeN(i)+disN(i),lr=tl?Math.round(likeN(i)*100/tl):0,sugs=i.comments.filter(c=>c.adopted&&!c.dismissed).slice(-3).reverse();
- return `<span>${statusChip(i)}</span><h3>${esc(tx(i.title))}</h3><p class="muted" style="font-size:13px">${i.author?esc(i.author):T('anon')} · ${ago(i.created)}</p>${i.img?`<img class="c-img" src="${i.img}" alt="" loading="lazy">`:''}<p style="white-space:pre-line">${esc(tx(i.desc))}</p>${olderOf(i)?`<p class="late-t">⚠️ ${T('olderFirst')} <a href="#idea-${olderOf(i).id}" style="color:inherit">${esc(tx(olderOf(i).title))}</a></p>`:''}${simNoteHTML(i)}${trHTML('i_'+i.id)}
+ return `<span>${statusChip(i)}</span><h3>${esc(tx(i.title))}</h3><p class="muted" style="font-size:13px">${i.author?esc(i.author):T('anon')} · ${ago(i.created)}</p>${galHTML(imgsOf(i))}<p style="white-space:pre-line">${esc(tx(i.desc))}</p>${olderOf(i)?`<p class="late-t">⚠️ ${T('olderFirst')} <a href="#idea-${olderOf(i).id}" style="color:inherit">${esc(tx(olderOf(i).title))}</a></p>`:''}${simNoteHTML(i)}${trHTML('i_'+i.id)}
  <div class="p-stats"><div><b>${fmt(yesN(i))}</b><span>${T('colWish')}</span></div><div><b>${pctOf(i)}%</b><span>${T('colYes')}</span></div><div><b class="vel">+${fmt(vel(i))}</b><span>${T('colVel')}</span></div><div><b>${lr}%</b><span>${T('likesRatio')}</span></div></div>${pledgeLineHTML(i)}${demandHTML(i)}
  ${sugs.length?`<div><h3 style="font-size:13px;margin-bottom:6px">${T('topSugs')}</h3><ul class="p-sugs">${sugs.map(c=>`<li>${esc(tx(c.text))}</li>`).join('')}</ul></div>`:''}
  ${sellActHTML(i)}${msgBtn(i,'wide')}`;
@@ -1520,6 +1528,12 @@ function fly(r){
  const a=s.animate([{transform:'translate(0,0) scale(1.2)'},{transform:`translate(${tr.left+tr.width/2-12-x0}px,${tr.top+tr.height/2-12-y0}px) scale(.5)`,opacity:.5}],{duration:650,easing:'cubic-bezier(.5,0,.3,1)'});
  a.onfinish=()=>{s.remove();t.classList.remove('bump');void t.offsetWidth;t.classList.add('bump')};
 }
+/* Gallery: up to 6 images per idea; one image shows plainly, several become a swipeable strip with a counter and arrows */
+const MAX_IMGS=6;
+const imgsOf=i=>i.imgs&&i.imgs.length?i.imgs:(i.img?[i.img]:[]);
+function galHTML(l){if(!l.length)return '';if(l.length===1)return `<img class="c-img" src="${esc(l[0])}" alt="" loading="lazy" decoding="async">`;
+ return `<div class="gal-w"><div class="gal" dir="ltr">${l.map(u=>`<img class="c-img" src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('')}</div><span class="gal-n tnum">1/${l.length}</span><button type="button" class="gal-b prev-b" data-act="gal" data-d="-1" aria-label="‹">‹</button><button type="button" class="gal-b next-b" data-act="gal" data-d="1" aria-label="›">›</button></div>`}
+document.addEventListener('scroll',e=>{const g=e.target;if(!g.classList||!g.classList.contains('gal'))return;const n=g.children.length,k=Math.min(n,Math.round(g.scrollLeft/Math.max(1,g.clientWidth))+1),c=g.parentNode.querySelector('.gal-n');if(c)c.textContent=k+'/'+n},true);
 function readImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const sc=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=u})}
 const VIEWS=['wishlist','factory','mine','inbox'];
 function setView(v){UI.view=VIEWS.includes(v)?v:'feed';renderChrome();renderView()}
@@ -1561,7 +1575,8 @@ document.addEventListener('click',async e=>{
  case 'compose-open':openCompose();break;
  case 'compose-hide':UI.composeOpen=false;renderView();break;
  case 'compose-cancel':UI.composeOpen=false;UI.draft={title:'',desc:'',img:'',anon:UI.draft.anon};renderView();break;
- case 'img-clear':UI.draft.img='';renderView();break;
+ case 'img-clear':{const l=UI.draft.imgs||[];l.splice(+el.dataset.k||0,1);UI.draft.imgs=l;UI.draft.img=l[0]||'';renderView();break}
+ case 'gal':{const g=el.closest('.gal-w').querySelector('.gal');g.scrollBy({left:(+el.dataset.d)*g.clientWidth,behavior:RM.matches?'auto':'smooth'});break}
  case 'peek':{const p=byId(el.dataset.pid);if(p)openIdea(p);break}
  case 'vote':{if(!i)break;const v=el.dataset.v,prev=vote(i),r=el.getBoundingClientRect();if(prev===v)delete S.me.votes[id];else S.me.votes[id]=v;if(LIVE)dbVote(id,S.me.votes[id]);save();refreshCard(id);updateBadges();if(v==='yes'&&prev!=='yes'){toast(T('toastWish'));fly(r)}if(UI.view==='wishlist'&&v!=='yes'&&!host.closest('.m-card'))renderView();break}
  case 'react':{if(!i)break;const v=+el.dataset.v;S.me.reacts[id]=react(i)===v?0:v;if(LIVE)dbReact(id,S.me.reacts[id]);save();refreshCard(id);if(S.me.reacts[id])document.querySelectorAll(`.card[data-id="${id}"] .ab.${v===1?'like':'dis'}`).forEach(b=>b.classList.add('pop'));break}
@@ -1640,7 +1655,7 @@ document.addEventListener('submit',e=>{
   if(isDup(top)){updateSimilar();err.innerHTML=`${esc(T('dupBlock'))} <button type="button" class="link" data-act="peek" data-pid="${top[0].id}">${esc(T('openExisting'))}</button>`;err.hidden=false;return}
   if(top){diff=(UI.draft.diff||'').trim();if(diff.length<15){$('#diffF').hidden=false;return fail(T('diffShort'),$('#c-diff'))}}
   if(!anon)S.me.name=name;
-  const idea={id:LIVE?crypto.randomUUID():uid(),live:LIVE||undefined,title,desc,img:UI.draft.img,author:anon?null:name,owner:S.me.token,key:genKey(),created:Date.now(),yes:0,no:0,likes:0,dislikes:0,w7:0,comments:[],history:[],status:'open',product:null,edited:false,similarTo:sims.map(s=>s[0].id),diff};
+  const idea={id:LIVE?crypto.randomUUID():uid(),live:LIVE||undefined,title,desc,img:(UI.draft.imgs||[])[0]||UI.draft.img||'',imgs:(UI.draft.imgs||[]).slice(),author:anon?null:name,owner:S.me.token,key:genKey(),created:Date.now(),yes:0,no:0,likes:0,dislikes:0,w7:0,comments:[],history:[],status:'open',product:null,edited:false,similarTo:sims.map(s=>s[0].id),diff};
   S.ideas.unshift(idea);save();UI.composeOpen=false;UI.draft={title:'',desc:'',img:'',anon,diff:''};UI.tab='new';UI.limit=12;renderChrome();renderView();
   const c=document.querySelector(`.card[data-id="${idea.id}"]`);if(c){c.classList.add('fresh');c.scrollIntoView({block:'center',behavior:RM.matches?'auto':'smooth'})}
   toast(T('toastPosted'));setTimeout(()=>openModal(keyHTML(idea)),450);
@@ -1745,7 +1760,7 @@ document.addEventListener('change',async e=>{
  if(t.id==='curSel'){S.me.cur=t.value==='auto'?'':t.value;save();renderView();toast(T('curL')+': '+myCur());return}
  if(t.id==='mk-c'){updFee();return}
  if(t.name==='who'){UI.draft.anon=t.value==='anon';const n=$('#c-name');n.hidden=UI.draft.anon;if(!UI.draft.anon)n.focus()}
- else if(t.id==='c-img'&&t.files&&t.files[0]){try{UI.draft.img=await readImg(t.files[0]);renderView()}catch(err){}}
+ else if(t.id==='c-img'&&t.files&&t.files[0]){const l=UI.draft.imgs||(UI.draft.imgs=[]);for(const fl of [...t.files].slice(0,MAX_IMGS-l.length)){try{l.push(await readImg(fl))}catch(err){}}UI.draft.img=l[0]||'';renderView()}
  else if(t.name==='tier'){const pub=t.value==='public';$('#pubf').hidden=!pub;$('#proofF').hidden=pub;$('#mk-u').required=!pub;$('#mk-ag').required=pub}
  else if(t.name==='offer'){const f=t.closest('form'),i=byId(f.dataset.pid);UI.offerId=t.value;UI.eff=null;UI.qty=1;$('#mc').innerHTML=buyHTML(i);updTotals(i)}
  else if(t.id==='g-on'){$('#g-ship-l').hidden=!t.checked}
@@ -1774,7 +1789,7 @@ async function rest(method,path,body,prefer){const h={apikey:SB.key,'Content-Typ
  if(!r.ok){const e=new Error((j&&(j.message||j.msg))||('http '+r.status));e.status=r.status;throw e}return j}
 const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):T('netErr'))}
-const IDEA_COLS='id,author_name,title,description,lang,image_url,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at';
+const IDEA_COLS='id,author_name,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at';
 let liveAt=0;
 async function liveLoad(){
  const [rows,sugs]=await Promise.all([rest('GET',`ideas?select=${IDEA_COLS}&order=created_at.desc&limit=1000`),rest('GET','suggestions?select=id,idea_id,author_name,body,status,created_at&order=created_at.asc&limit=5000')]);
@@ -1785,7 +1800,7 @@ async function liveLoad(){
  S.me.reacts={};(reacts||[]).forEach(v=>{S.me.reacts[v.idea_id]=v.value});
  const byIdea={};(sugs||[]).forEach(s=>{(byIdea[s.idea_id]||(byIdea[s.idea_id]=[])).push(s)});
  S.ideas=(rows||[]).map(r=>{const o=old.get(r.id)||{},own=mineSet.has(r.id),v=S.me.votes[r.id],rc=S.me.reacts[r.id]||0;
-  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,img:r.image_url||'',author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
+  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
    created:Date.parse(r.created_at),yes:r.yes_count-(v==='yes'?1:0),no:r.no_count-(v==='no'?1:0),likes:r.like_count-(rc===1?1:0),dislikes:r.dislike_count-(rc===-1?1:0),w7:o.w7||0,
    comments:(byIdea[r.id]||[]).map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})),
    history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:o.similarTo||[],diff:o.diff||''})});
@@ -1795,19 +1810,21 @@ async function liveLoad(){
 }
 async function liveRefresh(){try{await liveLoad();if(!UI.editing&&!UI.composeOpen)render();else updateBadges();if(location.hash.startsWith('#idea-')&&$('#modal').hidden)route()}catch(e){console.warn('tamanna load',e);if(!S.ideas.length)toast(T('netErr'))}}
 /* Image: already shrunk to ≤900px JPEG in the browser; stored under the poster's own folder, then linked to the idea */
-async function uploadImg(id,dataUrl){const at=await token(),blob=await (await fetch(dataUrl)).blob(),path=`${sess.uid}/${id}.jpg`;
+async function uploadImg(id,dataUrl,k){const at=await token(),blob=await (await fetch(dataUrl)).blob(),path=`${sess.uid}/${id}${k===undefined?'':'-'+k}.jpg`;
  const r=await fetch(`${SB.url}/storage/v1/object/idea-images/${path}`,{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+at,'Content-Type':'image/jpeg'},body:blob});
  if(!r.ok)throw new Error('upload '+r.status);return `${SB.url}/storage/v1/object/public/idea-images/${path}`}
-async function dbPost(i){try{S.me.keys[i.id]=i.key;save();let image_url=null;
- if(i.img&&i.img.startsWith('data:')){try{image_url=await uploadImg(i.id,i.img)}catch(e){console.warn('tamanna image',e);toast(T('imgErr'))}}
- await rest('POST','ideas',{id:i.id,title:i.title,description:i.desc,lang:S.me.lang,author_name:i.author||null,key_hash:await sha256(i.key),image_url},'return=minimal');i.owner=S.me.token;if(image_url)i.img=image_url;save()}
+async function dbPost(i){try{S.me.keys[i.id]=i.key;save();const images=[];let failed=false;
+ for(const [k,u] of imgsOf(i).entries()){if(!u.startsWith('data:'))continue;try{images.push(await uploadImg(i.id,u,k))}catch(e){console.warn('tamanna image',e);failed=true}}
+ if(failed)toast(T('imgErr'));
+ await rest('POST','ideas',{id:i.id,title:i.title,description:i.desc,lang:S.me.lang,author_name:i.author||null,key_hash:await sha256(i.key),image_url:images[0]||null,images},'return=minimal');i.owner=S.me.token;if(images.length){i.imgs=images;i.img=images[0]}save()}
  catch(e){S.ideas=S.ideas.filter(x=>x.id!==i.id);delete S.me.keys[i.id];save();closeModal();renderView();dbFail(e)}}
 async function dbVote(id,v){try{if(v)await rest('POST','votes?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal');else await rest('DELETE','votes?idea_id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbReact(id,v){try{if(v)await rest('POST','reactions?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal');else await rest('DELETE','reactions?idea_id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbSug(i,c,own){try{await rest('POST','suggestions',{id:c.id,idea_id:i.id,body:c.text,author_name:c.author||null},'return=minimal');if(own)await rest('PATCH','suggestions?id=eq.'+c.id,{status:'adopted'},'return=minimal')}catch(e){i.comments=i.comments.filter(x=>x!==c);save();refreshCard(i.id);dbFail(e)}}
 async function dbSugStatus(id,st){try{await rest('PATCH','suggestions?id=eq.'+id,{status:st},'return=minimal')}catch(e){dbFail(e)}}
 async function dbEdit(i){try{await rest('PATCH','ideas?id=eq.'+i.id,{title:i.title,description:i.desc},'return=minimal')}catch(e){dbFail(e)}}
-async function dbDel(id){try{await rest('DELETE','ideas?id=eq.'+id);if(sess)fetch(`${SB.url}/storage/v1/object/idea-images/${sess.uid}/${id}.jpg`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+sess.at}}).catch(()=>{})}catch(e){dbFail(e)}}
+async function dbDel(id){try{await rest('DELETE','ideas?id=eq.'+id);if(sess){const p=[`${sess.uid}/${id}.jpg`];for(let k=0;k<MAX_IMGS;k++)p.push(`${sess.uid}/${id}-${k}.jpg`);
+ fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+sess.at,'Content-Type':'application/json'},body:JSON.stringify({prefixes:p})}).catch(()=>{})}}catch(e){dbFail(e)}}
 async function dbClaim(k,m){m.textContent='…';try{const id=await rest('POST','rpc/claim_idea',{p_key:k});if(!id){m.textContent=T('badKey');return}S.me.keys[id]=k;await liveLoad();m.textContent=T('recovered');renderView();updateBadges()}catch(e){m.textContent=T('netErr')}}
 /* ---- factories: profiles, makes, notes, invites, private messages ---- */
 const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).push(x)});return m};
@@ -1872,6 +1889,7 @@ Object.assign(L.ar,{facJoinT:'حساب المصنع',facJoinSub:'سجّل مصن
 Object.assign(L.en,{facJoinT:'Factory account',facJoinSub:'Register your factory to browse the most-wished ideas, declare that you make an idea, and message creators.',facSignup:'Create factory account',facLogin:'Log in',facNameL:'Factory or company name',facHandleL:'Username',facHandleHint:'Starts with @, then 3–24 lowercase English letters, digits or _. Creators use it to direct ideas to you.',facCountryL:'Country',facWebL:'Website (optional)',emailL:'Email',pwL:'Password',pwHint:'At least 8 characters.',facSignNote:'Keep your email and password safe: password reset by email isn’t available yet.',handleTaken:'That username is taken. Choose another.',emailTaken:'This email is already registered. Log in instead.',authBad:'Wrong email or password.',confirmOn:'Email confirmation is switched on in the site settings; it must be off for now.',facWelcome:'Welcome! Your factory account is ready.',facHi:'Welcome back!',facBye:'Logged out.',facLogout:'Log out',facNeed:'Create a factory account first.'});
 Object.assign(L.zh,{facJoinT:'工厂账户',facJoinSub:'注册你的工厂,浏览最受期待的创意、声明你在生产某个创意,并联系创意作者。',facSignup:'创建工厂账户',facLogin:'登录',facNameL:'工厂或公司名称',facHandleL:'用户名',facHandleHint:'以 @ 开头,后接 3–24 个小写英文字母、数字或 _。作者用它把创意推荐给你。',facCountryL:'国家',facWebL:'网站(可选)',emailL:'电子邮箱',pwL:'密码',pwHint:'至少 8 个字符。',facSignNote:'请妥善保存邮箱和密码,目前暂不支持邮件找回密码。',handleTaken:'该用户名已被占用,请换一个。',emailTaken:'该邮箱已注册,请直接登录。',authBad:'邮箱或密码错误。',confirmOn:'网站设置中开启了邮箱确认,目前需要关闭。',facWelcome:'欢迎!你的工厂账户已就绪。',facHi:'欢迎回来!',facBye:'已退出登录。',facLogout:'退出登录',facNeed:'请先创建工厂账户。'});
 Object.assign(L.tr,{facJoinT:'Fabrika hesabı',facJoinSub:'En çok istenen fikirlere göz atmak, bir fikri ürettiğini bildirmek ve fikir sahipleriyle yazışmak için fabrikanı kaydet.',facSignup:'Fabrika hesabı oluştur',facLogin:'Giriş yap',facNameL:'Fabrika veya şirket adı',facHandleL:'Kullanıcı adı',facHandleHint:'@ ile başlar, ardından 3–24 küçük İngilizce harf, rakam veya _. Fikir sahipleri fikirlerini sana bununla yönlendirir.',facCountryL:'Ülke',facWebL:'Web sitesi (isteğe bağlı)',emailL:'E-posta',pwL:'Şifre',pwHint:'En az 8 karakter.',facSignNote:'E-postanı ve şifreni iyi sakla: e-postayla şifre sıfırlama henüz yok.',handleTaken:'Bu kullanıcı adı alınmış, başka birini seç.',emailTaken:'Bu e-posta zaten kayıtlı. Bunun yerine giriş yap.',authBad:'E-posta veya şifre yanlış.',confirmOn:'Site ayarlarında e-posta onayı açık; şimdilik kapalı olmalı.',facWelcome:'Hoş geldin! Fabrika hesabın hazır.',facHi:'Tekrar hoş geldin!',facBye:'Çıkış yaptın.',facLogout:'Çıkış yap',facNeed:'Önce bir fabrika hesabı oluştur.'});
+Object.assign(L.ar,{fImg:'صور تصوّرية (حتى ٦، اختياري)'});Object.assign(L.en,{fImg:'Concept images (up to 6, optional)'});Object.assign(L.zh,{fImg:'概念图(最多 6 张,可选)'});Object.assign(L.tr,{fImg:'Konsept görselleri (en fazla 6, isteğe bağlı)'});
 Object.assign(L.ar,{imgErr:'تعذّر رفع الصورة، فنُشرت الفكرة بدونها.'});Object.assign(L.en,{imgErr:'Couldn’t upload the image, so the idea was posted without it.'});Object.assign(L.zh,{imgErr:'图片上传失败,创意已在无图的情况下发布。'});Object.assign(L.tr,{imgErr:'Görsel yüklenemedi, fikir görselsiz yayınlandı.'});
 Object.assign(L.ar,{netErr:'تعذّر الاتصال. تحقق من الإنترنت وحاول مرة أخرى.',rateErr:'وصلت للحد اليومي. حاول غداً.'});
 Object.assign(L.en,{netErr:'Couldn’t connect. Check your internet and try again.',rateErr:'You’ve reached today’s limit. Try again tomorrow.'});
