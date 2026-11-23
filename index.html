@@ -208,6 +208,8 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .plan.hl{border:1.5px solid var(--pri);background:var(--pri-soft)}
 .plan .pr{font-size:22px;font-weight:800}.plan .pr small{font-size:12px;font-weight:500;color:var(--muted)}
 .plan ul{margin:0;padding-inline-start:18px;font-size:13px;line-height:1.7}
+.terms{display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.75}
+.terms h3{font-size:15px;margin:10px 0 0}.terms p,.terms ul{margin:0}.terms ul{padding-inline-start:20px}
 .notify-h{border:1.5px solid #F59E0B;background:rgba(245,158,11,.1);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.7;margin:0}
 .soon-n{background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:13px;margin:0}
 .acct{border:1.5px solid var(--pri);background:var(--pri-soft);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
@@ -1523,6 +1525,7 @@ function moreHTML(){
  <div class="msec" style="border:0;padding:0"><h3>${I.sparkle} ${T('aiLang')}</h3><select class="inp" id="tlangSel" aria-label="${T('aiLang')}">${['auto'].concat(TL).map(c=>`<option value="${c}"${(S.me.tlang||'auto')===c?' selected':''}>${c==='auto'?T('aiAuto')(langName(autoCode())):langName(c)}</option>`).join('')}</select><p class="muted" style="font-size:13px">${T('aiNote')}</p></div>
  <div class="msec"><h3>💱 ${T('curL')}</h3><select class="inp" id="curSel" aria-label="${T('curL')}"><option value="auto"${S.me.cur?'':' selected'}>${T('curAuto')(autoCur())}</option>${curOptions(S.me.cur||'')}</select><p class="muted" style="font-size:13px">${T('curNote')}</p></div>
  <div class="msec"><div class="row"><button class="btn sm" data-act="nav" data-v="factory">${I.factory}${T('navFactoryL')}</button><button class="btn sm" data-act="how">${T('heroHow')}</button></div></div>
+ <div class="msec"><button class="btn sm" style="align-self:flex-start" data-act="terms">📄 ${T('termsL')}</button></div>
  <div class="msec"><h3>${T('contactT')}</h3>
   <div class="contact"><span class="contact-l">${T('igL')}</span><a class="link" href="https://www.instagram.com/ahmedalwsabi/" target="_blank" rel="noopener noreferrer" dir="ltr">@ahmedalwsabi ↗</a></div>
   <div class="contact"><span class="contact-l">${T('mailL')}</span><code dir="ltr">alwsabi1@hotmail.com</code><button class="btn sm ghost" data-act="copy" data-t="alwsabi1@hotmail.com">${I.copy}${T('copy')}</button></div></div>
@@ -1784,7 +1787,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Enter'&&e.target.matches('tr[data-act="f-row"],.hero-mini[data-act="hero-peek"],.hero[data-act="hero-tap"]'))e.target.click();
  if(e.key==='Enter'&&e.target.id==='codeIn'){e.preventDefault();applyCode(byId(e.target.closest('form').dataset.pid))}
 });
-function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
+function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h==='terms'){openModal(termsHTML(),'terms');return}if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
 window.addEventListener('hashchange',route);
 
 /* ---------- live data layer (Supabase over plain fetch: no library, fast load) ----------
@@ -1882,6 +1885,7 @@ function facAuthHTML(){const up=UI.facMode!=='login';return `<section class="col
  <div class="two"><label class="fld">${T('facCountryL')}<input name="country" maxlength="60" autocomplete="country-name"></label><label class="fld">${T('facWebL')}<input name="web" type="url" dir="ltr" maxlength="200" placeholder="https://"></label></div>`:''}
  <label class="fld">${T('emailL')}<input name="email" type="email" required dir="ltr" autocomplete="email"></label>
  <label class="fld">${T('pwL')}<input name="pw" type="password" required minlength="8" dir="ltr" autocomplete="${up?'new-password':'current-password'}">${up?`<small class="muted">${T('pwHint')}</small>`:''}</label>
+ ${up?`<label class="chk"><input type="checkbox" name="terms" required><span>${T('termsAgree')} <button type="button" class="link" data-act="terms">${T('termsL')}</button></span></label>`:''}
  <p class="err" id="fa-err" hidden></p><button class="btn pri wide">${up?T('facSignup'):T('facLogin')}</button>
  ${up?`<p class="muted" style="font-size:12.5px;line-height:1.6">${T('facSignNote')}</p>`:''}</form></section>`}
 async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.pri'),fail=m=>{err.textContent=m;err.hidden=false;btn.disabled=false};err.hidden=true;btn.disabled=true;
@@ -1897,6 +1901,31 @@ async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.
   if(up)await rest('POST','factories',{handle,name,country:f.country.value.trim()||null,website:f.web.value.trim()||null},'return=minimal');
   await liveLoad();render();toast(up?T('facWelcome'):T('facHi'));
  }catch(e){const s=e.message||'';fail(/already registered|already exists/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/duplicate|unique/i.test(s)?T('handleTaken'):/password/i.test(s)?T('pwHint'):T('netErr'))}}
+/* ---- Terms of use & privacy (Arabic and English; other languages show English, which prevails). Starting version, to be
+   reviewed by a lawyer before real payments. Reachable from More, the factory sign-up form, and /#terms. ---- */
+function termsHTML(){const ar=S.me.lang==='ar';return `<div class="terms" dir="${ar?'rtl':'ltr'}">${ar?TERMS_AR:TERMS_EN}</div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="terms"]');if(!b)return;e.preventDefault();openModal(termsHTML(),'terms')});
+const TERMS_AR=`<h2>📄 شروط الاستخدام والخصوصية</h2><p class="muted">آخر تحديث: ٢٤ نوفمبر ٢٠٢٦</p>
+<h3>١. عن تمنّى</h3><p>تمنّى (Tamanna) منصة ينشر فيها الناس منتجات يتمنون وجودها، ويصوّت عليها الآخرون، وتصنعها المصانع. المنصة مسجلة وتُدار من هولندا. باستخدامك الموقع فأنت توافق على هذه الشروط.</p>
+<h3>٢. الأفكار مفتوحة</h3><p>عند نشرك فكرة فأنت توافق أنها <b>فكرة مفتوحة</b>: يحق لأي مصنع تصنيعها وبيعها، ولا تترتب لك عليها حقوق ملكية فكرية أو مطالبات مالية. لا تنشر فكرة تملك عليها براءة اختراع أو سراً تجارياً تريد حمايته.</p>
+<h3>٣. المحتوى المسموح</h3><p>أنت مسؤول عما تنشره. يُمنع المحتوى المسيء أو غير القانوني أو المضلل، وانتحال شخصية أي جهة، واستخدام الأسماء المحجوزة مثل «Tamanna Team» أو ما يشبه اسم «تمنّى». يحق لنا حذف أي محتوى مخالف.</p>
+<h3>٤. بيانات الموقع والاستخدام التجاري</h3><p>الأفكار والأصوات والأرقام وكل بيانات الموقع تُعرض للتصفح الشخصي. <b>يُمنع جمع بيانات الموقع أو نسخها أو تحليلها بطريقة آلية</b> (برامج الزحف أو الكشط أو الواجهات البرمجية) <b>أو استخدامها لأغراض تجارية</b>، إلا عبر <b>حساب مصنع</b> وبموجب هذه الشروط. يحق لنا إيقاف أي حساب أو وصول مخالف واتخاذ الإجراءات القانونية.</p>
+<h3>٥. المصانع والبيع</h3><ul><li>البائع الحقيقي هو المصنع، وهو المسؤول عن منتجه وجودته وسلامته ومطابقته للقوانين.</li><li>يُحاسَب المنتج على <b>الوصف الأصلي للفكرة</b> وقت التصنيع، أو على «ملاحظة المصنع» التي وافق عليها صاحب الفكرة.</li><li>على المصنع الشحن خلال المدة المحددة، وإلا يُسترد المبلغ للمشتري تلقائياً وتُسجَّل مخالفة، وتتكرر العقوبات حتى الإيقاف أو الإزالة.</li><li>عمولة المنصة <b>5%</b> على كل بيع داخل تمنّى.</li><li>يُمنع إزعاج أصحاب الأفكار، وتُطبَّق حدود المحادثات حسب الباقة.</li></ul>
+<h3>٦. المشترون والإرجاع</h3><p>يحق للمشتري في الاتحاد الأوروبي الإرجاع خلال <b>14 يوماً</b> من الاستلام وفق القانون. وإذا خالف المنتج الوصف المعتمد، يحق له إرجاعه واسترداد المبلغ وتكون تكلفة الإرجاع على المصنع.</p>
+<h3>٧. دور تمنّى</h3><p>تمنّى <b>وسيط</b> يربط الناس بالمصانع، وليست طرفاً في عقد البيع. نبذل جهدنا لحماية الطرفين بقواعد تلقائية، ولا نضمن أي منتج يصنعه طرف آخر.</p>
+<h3>٨. الخصوصية</h3><ul><li>تتصفح وتنشر بدون حساب؛ نحفظ في جهازك رمزاً يربطك بأفكارك وأصواتك.</li><li>إذا حفظت حسابك، نحفظ <b>إيميلك</b> لتسجيل الدخول والإشعارات فقط، و<b>لا يظهر لأي أحد</b>.</li><li>للمصانع: الاسم والدولة والموقع الإلكتروني تظهر للعامة، والإيميل لا يظهر.</li><li>عنوان الشحن يراه فقط المصنع الذي اشتريت منه.</li><li>بياناتنا محفوظة في خوادم داخل <b>الاتحاد الأوروبي</b>، ولا نبيع بياناتك الشخصية لأحد.</li><li>من حقك طلب نسخة من بياناتك أو حذفها في أي وقت عبر التواصل معنا.</li></ul>
+<h3>٩. التعديلات والقانون</h3><p>قد نحدّث هذه الشروط، ونوضح تاريخ آخر تحديث أعلاه. يخضع استخدام الموقع لقوانين <b>هولندا</b>. للتواصل: <span dir="ltr">alwsabi1@hotmail.com</span></p>`;
+const TERMS_EN=`<h2>📄 Terms of Use & Privacy</h2><p class="muted">Last updated: 24 November 2026. This English version prevails over translations.</p>
+<h3>1. About Tamanna</h3><p>Tamanna is a platform where people post products they wish existed, others vote on them, and factories make them. It is run from the Netherlands. By using the site you agree to these terms.</p>
+<h3>2. Ideas are open</h3><p>By posting an idea you agree it is an <b>open idea</b>: any factory may make and sell it, and you gain no intellectual-property rights or financial claims over it. Don’t post anything you hold a patent or trade secret on.</p>
+<h3>3. Allowed content</h3><p>You are responsible for what you post. Abusive, illegal or misleading content, impersonation, and reserved names such as “Tamanna Team” or anything resembling “Tamanna” are not allowed. We may remove any content that breaks these rules.</p>
+<h3>4. Site data and commercial use</h3><p>Ideas, votes, numbers and all site data are shown for personal browsing. <b>Collecting, copying or analysing site data by automated means</b> (crawlers, scrapers or APIs) <b>or using it for commercial purposes</b> is prohibited, except through a <b>factory account</b> under these terms. We may suspend any infringing account or access and take legal action.</p>
+<h3>5. Factories and selling</h3><ul><li>The factory is the actual seller and is responsible for its product, its quality, safety and legal compliance.</li><li>A product is judged against the <b>idea’s original description</b> at the time of manufacture, or against a factory note approved by the idea’s creator.</li><li>Factories must ship within the stated time; otherwise the buyer is refunded automatically and a strike is recorded, escalating to suspension or removal.</li><li>The platform commission is <b>5%</b> of every sale made on Tamanna.</li><li>Spamming creators is prohibited; conversation limits apply per plan.</li></ul>
+<h3>6. Buyers and returns</h3><p>Buyers in the EU may return a product within <b>14 days</b> of delivery as provided by law. If a product doesn’t match the approved description, the buyer may return it for a refund and the factory pays the return costs.</p>
+<h3>7. Tamanna’s role</h3><p>Tamanna is an <b>intermediary</b> connecting people and factories and is not a party to the sale. We protect both sides with automatic rules but do not guarantee products made by third parties.</p>
+<h3>8. Privacy</h3><ul><li>You can browse and post without an account; a token stored on your device links you to your ideas and votes.</li><li>If you save your account, we store your <b>email</b> only for login and notifications; it is <b>never shown to anyone</b>.</li><li>For factories, name, country and website are public; the email is not.</li><li>A shipping address is seen only by the factory you bought from.</li><li>Data is stored on servers inside the <b>European Union</b>, and we never sell personal data.</li><li>You may request a copy of your data or its deletion at any time by contacting us.</li></ul>
+<h3>9. Changes and law</h3><p>We may update these terms and show the last-updated date above. Use of the site is governed by the laws of <b>the Netherlands</b>. Contact: <span dir="ltr">alwsabi1@hotmail.com</span></p>`;
+Object.assign(L.ar,{termsL:'شروط الاستخدام والخصوصية',termsAgree:'أوافق على'});Object.assign(L.en,{termsL:'Terms of Use & Privacy',termsAgree:'I agree to the'});Object.assign(L.zh,{termsL:'使用条款与隐私',termsAgree:'我同意'});Object.assign(L.tr,{termsL:'Kullanım Şartları ve Gizlilik',termsAgree:'Kabul ediyorum:'});
 /* ---- Factory plans (shown as "coming soon" until payments are switched on). Paid plans give tools and data,
    never ranking: every idea stays equally visible and is ordered only by people's votes. Message caps apply on every plan. ---- */
 const PLANS=[{k:'free',price:0,cap:10},{k:'pro',price:49,cap:40,hl:true},{k:'biz',price:149,cap:120}];
@@ -2007,7 +2036,7 @@ UI.view=VIEWS.includes(h0)?h0:'feed';
 if(!S.me.langSeen){UI.langOpen=true;UI.langWelcome=true;UI.langT=setTimeout(closeLang,20000)}
 if(LIVE){document.body.classList.add('live');if(sess&&sess.uid)S.me.token=sess.uid}
 render();
-if(h0.startsWith('idea-')||h0==='team')route();
+if(h0.startsWith('idea-')||h0==='team'||h0==='terms')route();
 if(LIVE){liveRefresh();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-liveAt>60e3)liveRefresh()})}
 /* AI translation lights up only where the viewer can use it */
 if(window.claude&&typeof window.claude.use==='function'){window.claude.use('downloads').then(d=>{if(d)DL.fn=d}).catch(()=>{})}
