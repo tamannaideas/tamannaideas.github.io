@@ -1928,7 +1928,7 @@ UI.view=VIEWS.includes(h0)?h0:'feed';
 if(!S.me.langSeen){UI.langOpen=true;UI.langWelcome=true;UI.langT=setTimeout(closeLang,20000)}
 if(LIVE){document.body.classList.add('live');if(sess&&sess.uid)S.me.token=sess.uid}
 render();
-if(h0.startsWith('idea-'))route();
+if(h0.startsWith('idea-')||h0==='team')route();
 if(LIVE){liveRefresh();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-liveAt>60e3)liveRefresh()})}
 /* AI translation lights up only where the viewer can use it */
 if(window.claude&&typeof window.claude.use==='function'){window.claude.use('downloads').then(d=>{if(d)DL.fn=d}).catch(()=>{})}
