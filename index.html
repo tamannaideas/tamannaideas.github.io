@@ -1700,7 +1700,7 @@ document.addEventListener('submit',e=>{
   const fail=(m,elf)=>{err.textContent=m;err.hidden=false;if(elf)elf.focus()};
   if(title.length<4)return fail(T('minLen'),$('#c-title'));
   if(desc.length<5)return fail(T('fDescPh'),$('#c-desc'));
-  if(!anon&&!name)return fail(T('needName'),$('#c-name'));
+  if(!anon&&name.length<2)return fail(T('needName'),$('#c-name'));
   if(LIVE&&!anon&&!OFFICIAL&&isReservedName(name))return fail(T('nameReserved'),$('#c-name'));
   const sims=findSimilar(title,desc),top=sims[0];let diff='';
   if(isDup(top)){updateSimilar();err.innerHTML=`${esc(T('dupBlock'))} <button type="button" class="link" data-act="peek" data-pid="${top[0].id}">${esc(T('openExisting'))}</button>`;err.hidden=false;return}
@@ -1712,7 +1712,7 @@ document.addEventListener('submit',e=>{
   toast(T('toastPosted'));setTimeout(()=>openModal(keyHTML(idea)),450);
   if(LIVE)dbPost(idea);
  }else if(kind==='sug'&&i){
-  const v=f.t.value.trim();if(!v)return;const own=isOwner(i),cm={id:LIVE?crypto.randomUUID():uid(),author:S.me.name||null,by:S.me.token,text:v,created:Date.now(),adopted:own};i.comments.push(cm);if(LIVE)dbSug(i,cm,own);save();refreshCard(id);if(!own)toast(T('toastSent'));const inp=document.getElementById('s-'+id);if(inp)inp.focus({preventScroll:true});
+  const v=f.t.value.trim();if(v.length<2){f.t.focus();return}const own=isOwner(i),cm={id:LIVE?crypto.randomUUID():uid(),author:S.me.name||null,by:S.me.token,text:v,created:Date.now(),adopted:own};i.comments.push(cm);if(LIVE)dbSug(i,cm,own);save();refreshCard(id);if(!own)toast(T('toastSent'));const inp=document.getElementById('s-'+id);if(inp)inp.focus({preventScroll:true});
  }else if(kind==='add'&&i&&isOwner(i)&&isMade(i)){
   const t=f.elements.t.value.trim();if(t.length<5){f.elements.t.focus();return}
   (i.adds||(i.adds=[])).push({at:Date.now(),text:t});i.history.push({at:Date.now(),note:{k:'hAdd'}});UI.editing=null;save();refreshCard(id);if(UI.view==='mine')renderView();toast(T('addT'));
@@ -1721,7 +1721,7 @@ document.addEventListener('submit',e=>{
   i.fnotes=(i.fnotes||[]).filter(n=>n.fac!==myHandle());i.fnotes.push({fac:myHandle(),name,text:t,at:Date.now(),verdict:null});if(LIVE)dbNote(i,t);
   i.history.push({at:Date.now(),note:{k:'hFacNote',p:name}});UI.editing=null;save();refreshCard(id);toast(T('fnSent'));
  }else if(kind==='edit'&&i&&isOwner(i)&&!isMade(i)){
-  const t=f.elements.title.value.trim(),d=f.elements.desc.value.trim();if(t.length<4||!d)return;
+  const t=f.elements.title.value.trim(),d=f.elements.desc.value.trim();if(t.length<4||d.length<5)return;
   if(t===tx(i.title)&&d===tx(i.desc)){UI.editing=null;refreshCard(id);return}
   /* After manufacture the text at that moment is frozen as the original; every later edit is signed (creator or factory) and dated */
   const owner=isOwner(i),fac=!owner&&myMakerOf(i);
@@ -1868,7 +1868,10 @@ async function dbPost(i){try{S.me.keys[i.id]=i.key;save();const images=[];let fa
  for(const [k,u] of imgsOf(i).entries()){if(!u.startsWith('data:'))continue;try{images.push(await uploadImg(i.id,u,k))}catch(e){console.warn('tamanna image',e);failed=true}}
  if(failed)toast(T('imgErr'));
  await rest('POST','ideas',{id:i.id,title:i.title,description:i.desc,lang:S.me.lang,author_name:i.author||null,key_hash:await sha256(i.key),image_url:images[0]||null,images},'return=minimal');i.owner=S.me.token;if(images.length){i.imgs=images;i.img=images[0]}save()}
- catch(e){S.ideas=S.ideas.filter(x=>x.id!==i.id);delete S.me.keys[i.id];save();closeModal();renderView();dbFail(e)}}
+ catch(e){S.ideas=S.ideas.filter(x=>x.id!==i.id);delete S.me.keys[i.id];
+  /* Never lose what the person wrote: put it back in the form */
+  UI.draft={title:i.title,desc:i.desc,img:i.img&&i.img.startsWith('data:')?i.img:'',imgs:imgsOf(i).filter(u=>u.startsWith('data:')),anon:!i.author,diff:i.diff||''};UI.composeOpen=true;
+  save();closeModal();renderView();dbFail(e)}}
 async function dbVote(id,v){try{if(v)await rest('POST','votes?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal');else await rest('DELETE','votes?idea_id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbReact(id,v){try{if(v)await rest('POST','reactions?on_conflict=idea_id,user_id',{idea_id:id,value:v},'resolution=merge-duplicates,return=minimal');else await rest('DELETE','reactions?idea_id=eq.'+id)}catch(e){dbFail(e)}}
 async function dbSug(i,c,own){try{await rest('POST','suggestions',{id:c.id,idea_id:i.id,body:c.text,author_name:c.author||null},'return=minimal');if(own)await rest('PATCH','suggestions?id=eq.'+c.id,{status:'adopted'},'return=minimal')}catch(e){i.comments=i.comments.filter(x=>x!==c);save();refreshCard(i.id);dbFail(e)}}
@@ -2018,7 +2021,7 @@ async function adminHTML(){let lic=[],reps=[];try{[lic,reps]=await Promise.all([
  <section class="adm"><h3>${T('admIssue')}</h3><form class="edit" data-form="issue"><div class="two"><label class="fld">${T('admHandle')}<input name="h" required dir="ltr" placeholder="@factory"></label><label class="fld">${T('admIdea')}<input name="i" required dir="ltr" placeholder="https://tamannaideas.github.io/#idea-…"></label></div>
  <div class="two"><label class="fld">${T('admPrice')}<input name="p" type="number" min="0" step="0.01" required></label><label class="fld">${T('curL')}<select class="inp" name="c">${curOptions('EUR')}</select></label></div>
  <label class="fld">${T('admProof')}<input name="u" type="url" dir="ltr" placeholder="https://"></label><p class="err" id="adm-err" hidden></p><button class="btn pri">${T('admIssueBtn')}</button></form><div id="adm-out"></div></section>
- <section class="adm"><h3>${T('admReports')} (${fmt(R.length)})</h3>${R.length?R.map(r=>`<div class="rep"><b>🏪 ${esc(r.store_name)}</b>${r.store_url?` <a class="link" dir="ltr" href="${esc(r.store_url)}" target="_blank" rel="noopener noreferrer">${esc(r.store_url.slice(0,60))} ↗</a>`:''}<small class="muted">${esc(tx((byId(r.idea_id)||{}).title)||'')} · ${ago(Date.parse(r.created_at))}</small>${r.note?`<p>${esc(r.note)}</p>`:''}<div class="rep-imgs"><a href="${r.pu}" target="_blank" rel="noopener noreferrer"><img src="${r.pu}" alt="${T('rpProof')}"><small>🧾 ${T('rpProof')}</small></a><a href="${r.bu}" target="_blank" rel="noopener noreferrer"><img src="${r.bu}" alt="${T('rpBadge')}"><small>🏷️ ${T('rpBadge')}</small></a></div><p class="muted" style="font-size:12.5px">${T('admHow')}</p><div class="row"><button class="btn sm danger" data-act="rep-decide" data-id="${r.id}" data-s="confirmed" data-p="${esc(r.purchase_path)}" data-b="${esc(r.badge_path)}">${T('admFake')}</button><button class="btn sm" data-act="rep-decide" data-id="${r.id}" data-s="rejected" data-p="${esc(r.purchase_path)}" data-b="${esc(r.badge_path)}">${T('admReject')}</button></div></div>`).join(''):`<p class="muted">${T('admNoReports')}</p>`}</section>
+ <section class="adm"><h3>${T('admReports')} (${fmt(R.length)})</h3>${R.length?R.map(r=>`<div class="rep"><b>🏪 ${esc(r.store_name)}</b>${r.store_url&&/^https?:\/\//i.test(r.store_url)?` <a class="link" dir="ltr" href="${esc(r.store_url)}" target="_blank" rel="noopener noreferrer">${esc(r.store_url.slice(0,60))} ↗</a>`:''}<small class="muted">${esc(tx((byId(r.idea_id)||{}).title)||'')} · ${ago(Date.parse(r.created_at))}</small>${r.note?`<p>${esc(r.note)}</p>`:''}<div class="rep-imgs"><a href="${r.pu}" target="_blank" rel="noopener noreferrer"><img src="${r.pu}" alt="${T('rpProof')}"><small>🧾 ${T('rpProof')}</small></a><a href="${r.bu}" target="_blank" rel="noopener noreferrer"><img src="${r.bu}" alt="${T('rpBadge')}"><small>🏷️ ${T('rpBadge')}</small></a></div><p class="muted" style="font-size:12.5px">${T('admHow')}</p><div class="row"><button class="btn sm danger" data-act="rep-decide" data-id="${r.id}" data-s="confirmed" data-p="${esc(r.purchase_path)}" data-b="${esc(r.badge_path)}">${T('admFake')}</button><button class="btn sm" data-act="rep-decide" data-id="${r.id}" data-s="rejected" data-p="${esc(r.purchase_path)}" data-b="${esc(r.badge_path)}">${T('admReject')}</button></div></div>`).join(''):`<p class="muted">${T('admNoReports')}</p>`}</section>
  <section class="adm"><h3>${T('admAll')} (${fmt((lic||[]).length)})</h3>${(lic||[]).length?`<ul class="lic-l">${lic.map(l=>`<li><b>${esc(l.title)}</b><small>${esc(l.factory)} <span dir="ltr">${esc(l.handle)}</span> · ${l.price!=null?esc(l.price+' '+(l.currency||'')):''}</small><small dir="ltr">TM-${esc(l.code)}</small>${l.status==='active'?`<button class="btn sm ghost" data-act="lic-revoke" data-c="${esc(l.code)}">${T('admRevoke')}</button>`:`<span class="late-t">${T('vRevT')}</span>`}</li>`).join('')}</ul>`:`<p class="muted">—</p>`}</section>`}
 async function openAdmin(){openModal('<p class="muted">…</p>','admin');$('#mc').innerHTML=await adminHTML()}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-act="verify-open"],[data-act="report"],[data-act="my-badges"],[data-act="badge-dl"],[data-act="admin-badges"],[data-act="rep-decide"],[data-act="lic-revoke"]');if(!b)return;e.preventDefault();const a=b.dataset.act;
