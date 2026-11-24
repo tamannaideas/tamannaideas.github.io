@@ -1545,7 +1545,6 @@ function moreHTML(){
  return `<h2>${T('more')}</h2>${LIVE?acctSecHTML():''}
  <div class="msec" style="border:0;padding:0"><h3>${I.sparkle} ${T('aiLang')}</h3><select class="inp" id="tlangSel" aria-label="${T('aiLang')}">${['auto'].concat(TL).map(c=>`<option value="${c}"${(S.me.tlang||'auto')===c?' selected':''}>${c==='auto'?T('aiAuto')(langName(autoCode())):langName(c)}</option>`).join('')}</select><p class="muted" style="font-size:13px">${T('aiNote')}</p></div>
  <div class="msec"><h3>💱 ${T('curL')}</h3><select class="inp" id="curSel" aria-label="${T('curL')}"><option value="auto"${S.me.cur?'':' selected'}>${T('curAuto')(autoCur())}</option>${curOptions(S.me.cur||'')}</select><p class="muted" style="font-size:13px">${T('curNote')}</p></div>
- <div class="msec"><div class="row"><button class="btn sm" data-act="nav" data-v="factory">${I.factory}${T('navFactoryL')}</button></div></div>
  <div class="msec"><div class="row">${LIVE?`<button class="btn sm" data-act="verify-open">🔎 ${T('vCheck')}</button>`:''}<button class="btn sm" data-act="terms">📄 ${T('termsL')}</button></div></div>
  <div class="msec"><h3>${T('contactT')}</h3>
   <div class="contact"><span class="contact-l">${T('igL')}</span><a class="link" href="https://www.instagram.com/ahmedalwsabi/" target="_blank" rel="noopener noreferrer" dir="ltr">@ahmedalwsabi ↗</a></div>
