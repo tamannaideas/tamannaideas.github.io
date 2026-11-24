@@ -215,6 +215,15 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .plan ul{margin:0;padding-inline-start:18px;font-size:13px;line-height:1.7}
 .terms{display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.75}
 .terms h3{font-size:15px;margin:10px 0 0}.terms p,.terms ul{margin:0}.terms ul{padding-inline-start:20px}
+.cert{display:flex;flex-direction:column;gap:8px;text-align:center;align-items:center}
+.cert.ok{border:2px solid #16A34A;border-radius:16px;padding:16px}.cert.bad{border:2px solid #DC2626;border-radius:16px;padding:16px}
+.cert-seal{width:56px;height:56px;border-radius:50%;background:#16A34A;color:#fff;font-size:30px;font-weight:900;display:grid;place-items:center}
+.cert-fac{font-size:16px;margin:0}.cert-l{list-style:none;padding:0;margin:0;font-size:14px;line-height:1.9}.cert .c-img{max-height:220px}
+.badge-note{font-size:12.5px;line-height:1.6;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px;margin:0}
+.lic-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}.lic-l li{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:4px}
+.adm{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:8px}.adm h3{font-size:15px;margin:0}
+.rep{border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.rep-imgs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rep-imgs a{display:flex;flex-direction:column;gap:2px;color:inherit;text-decoration:none}.rep-imgs img{width:100%;height:150px;object-fit:cover;border-radius:8px;background:var(--surface-2)}
 .qr-safe{margin:4px 0 0;font-size:13px;line-height:1.6;font-weight:600;color:#16A34A}
 .notify-h{border:1.5px solid #F59E0B;background:rgba(245,158,11,.1);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.7;margin:0}
 .soon-n{background:var(--surface-2);border-radius:10px;padding:8px 12px;font-size:13px;margin:0}
@@ -578,7 +587,7 @@ details.fld summary{cursor:pointer;color:var(--pri)}
 .lang-pop button:hover{background:var(--surface-2)}
 .lang-pop button.on{background:var(--pri-soft);color:var(--pri)}
 .lang-pop button small{font-weight:600;color:var(--muted);font-size:11px}
-.lang-pop .timer{height:3px;border-radius:3px;background:var(--wish);margin:6px 8px 2px;transform-origin:left center;animation:shrink 20s linear forwards}
+.lang-pop .timer{height:3px;border-radius:3px;background:var(--wish);margin:6px 8px 2px;transform-origin:left center;animation:shrink 10s linear forwards}
 @keyframes shrink{to{transform:scaleX(0)}}
 /* Idea page + similar ideas */
 .c-title a{color:inherit;text-decoration:none}
@@ -1269,7 +1278,7 @@ function sellActHTML(i){
 function renderFactory(){
  if(LIVE&&!FAC){$('#view').innerHTML=facAuthHTML();return}
  const th=(k,l)=>`<th><button data-act="f-sort" data-k="${k}" class="${UI.fSort===k?'on':''}">${l}${UI.fSort===k?(UI.fDir<0?' ↓':' ↑'):''}</button></th>`;
- const head=`<div><h2>${T('facTitle')} <button class="link" style="font-size:13px;font-weight:600" data-act="how" data-fac="1">${T('heroHow')}</button></h2><p class="muted">${T('facSub')} · <span dir="ltr">${T('yourHandle')(myHandle())}</span> · <span class="tnum">${T('contactLeft')(fmt(Math.max(0,CONTACT_MAX-contactsUsed())),fmt(CONTACT_MAX))}</span>${LIVE&&FAC?` · <b>${esc(FAC.name)}</b> <button class="link" data-act="fac-logout">${T('facLogout')}</button>`:''} · <button class="link" data-act="plans">📦 ${T('subL')}</button></p><div class="seg" style="margin-top:8px" role="group"><button data-act="f-tab" data-v="ideas" class="${UI.fTab!=='orders'?'on':''}">${T('facIdeas')}</button><button data-act="f-tab" data-v="products" class="${UI.fTab==='products'?'on':''}">${T('facProducts')} (${fmt(myProducts().length)})</button><button data-act="f-tab" data-v="orders" class="${UI.fTab==='orders'?'on':''}">${T('facOrders')} (${fmt(myOrders().length)})</button></div></div>`;
+ const head=`<div><h2>${T('facTitle')} <button class="link" style="font-size:13px;font-weight:600" data-act="how" data-fac="1">${T('heroHow')}</button></h2><p class="muted">${T('facSub')} · <span dir="ltr">${T('yourHandle')(myHandle())}</span> · <span class="tnum">${T('contactLeft')(fmt(Math.max(0,CONTACT_MAX-contactsUsed())),fmt(CONTACT_MAX))}</span>${LIVE&&FAC?` · <b>${esc(FAC.name)}</b> <button class="link" data-act="fac-logout">${T('facLogout')}</button> · <button class="link" data-act="my-badges">🏷️ ${T('myBadges')}</button>`:''} · <button class="link" data-act="plans">📦 ${T('subL')}</button></p><div class="seg" style="margin-top:8px" role="group"><button data-act="f-tab" data-v="ideas" class="${UI.fTab!=='orders'?'on':''}">${T('facIdeas')}</button><button data-act="f-tab" data-v="products" class="${UI.fTab==='products'?'on':''}">${T('facProducts')} (${fmt(myProducts().length)})</button><button data-act="f-tab" data-v="orders" class="${UI.fTab==='orders'?'on':''}">${T('facOrders')} (${fmt(myOrders().length)})</button></div></div>`;
  if(UI.fTab==='orders'){$('#view').innerHTML=`<section class="fac"><div class="fac-top">${head}</div>${ordersHTML()}</section>`;return}
  if(UI.fTab==='products'){$('#view').innerHTML=`<section class="fac"><div class="fac-top">${head}</div>${productsHTML()}</section>`;return}
  const nInv=S.ideas.filter(i=>(i.invites||[]).includes(myHandle())).length;
@@ -1515,7 +1524,7 @@ function similarTo(i,n){
   .sort((a,b)=>(b[1]-a[1])||(yesN(b[0])-yesN(a[0]))).slice(0,n||8).map(a=>a[0]);
 }
 function miniHTML(x){const d=isPublic(x)?discOf(x):null;return `<a class="mini" href="#idea-${x.id}"><span class="mini-img">${x.img?`<img src="${x.img}" alt="" loading="lazy" decoding="async">`:I.bulb}</span><b>${esc(tx(x.title))}</b><small class="tnum">${fmt(yesN(x))} ${T('wishers')}</small>${isPublic(x)?`<span class="badge ver">${I.check}${money(x.product.price)}</span>`:''}${d?`<span class="badge disc">${I.tag}${d.pct}%</span>`:''}</a>`}
-function ideaHTML(i){return `<div class="m-card">${cardHTML(i)}</div><section class="sim"><h3>${T('simTitle')}</h3><div class="sim-row">${similarTo(i).map(miniHTML).join('')}</div></section>`}
+function ideaHTML(i){return `<div class="m-card">${cardHTML(i)}</div>${LIVE?badgeNoteHTML(i):''}<section class="sim"><h3>${T('simTitle')}</h3><div class="sim-row">${similarTo(i).map(miniHTML).join('')}</div></section>`}
 function openIdea(i){openModal(ideaHTML(i),'idea');$('.sheet').scrollTop=0}
 /* Two audiences, two explainers: visitors see what matters to them; factory details live inside Factory mode */
 function howHTML(fac){
@@ -1530,8 +1539,8 @@ function moreHTML(){
  return `<h2>${T('more')}</h2>
  <div class="msec" style="border:0;padding:0"><h3>${I.sparkle} ${T('aiLang')}</h3><select class="inp" id="tlangSel" aria-label="${T('aiLang')}">${['auto'].concat(TL).map(c=>`<option value="${c}"${(S.me.tlang||'auto')===c?' selected':''}>${c==='auto'?T('aiAuto')(langName(autoCode())):langName(c)}</option>`).join('')}</select><p class="muted" style="font-size:13px">${T('aiNote')}</p></div>
  <div class="msec"><h3>💱 ${T('curL')}</h3><select class="inp" id="curSel" aria-label="${T('curL')}"><option value="auto"${S.me.cur?'':' selected'}>${T('curAuto')(autoCur())}</option>${curOptions(S.me.cur||'')}</select><p class="muted" style="font-size:13px">${T('curNote')}</p></div>
- <div class="msec"><div class="row"><button class="btn sm" data-act="nav" data-v="factory">${I.factory}${T('navFactoryL')}</button><button class="btn sm" data-act="how">${T('heroHow')}</button></div></div>
- <div class="msec"><button class="btn sm" style="align-self:flex-start" data-act="terms">📄 ${T('termsL')}</button></div>
+ <div class="msec"><div class="row"><button class="btn sm" data-act="nav" data-v="factory">${I.factory}${T('navFactoryL')}</button></div></div>
+ <div class="msec"><div class="row">${LIVE?`<button class="btn sm" data-act="verify-open">🔎 ${T('vCheck')}</button>`:''}<button class="btn sm" data-act="terms">📄 ${T('termsL')}</button></div></div>
  <div class="msec"><h3>${T('contactT')}</h3>
   <div class="contact"><span class="contact-l">${T('igL')}</span><a class="link" href="https://www.instagram.com/ahmedalwsabi/" target="_blank" rel="noopener noreferrer" dir="ltr">@ahmedalwsabi ↗</a></div>
   <div class="contact"><span class="contact-l">${T('mailL')}</span><code dir="ltr">alwsabi1@hotmail.com</code><button class="btn sm ghost" data-act="copy" data-t="alwsabi1@hotmail.com">${I.copy}${T('copy')}</button></div></div>
@@ -1555,7 +1564,7 @@ const imgsOf=i=>i.imgs&&i.imgs.length?i.imgs:(i.img?[i.img]:[]);
 function galHTML(l){if(!l.length)return '';if(l.length===1)return `<img class="c-img" src="${esc(l[0])}" alt="" loading="lazy" decoding="async">`;
  return `<div class="gal-w"><div class="gal" dir="ltr">${l.map(u=>`<img class="c-img" src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('')}</div><span class="gal-n tnum">1/${l.length}</span><button type="button" class="gal-b prev-b" data-act="gal" data-d="-1" aria-label="‹">‹</button><button type="button" class="gal-b next-b" data-act="gal" data-d="1" aria-label="›">›</button></div>`}
 document.addEventListener('scroll',e=>{const g=e.target;if(!g.classList||!g.classList.contains('gal'))return;const n=g.children.length,k=Math.min(n,Math.round(g.scrollLeft/Math.max(1,g.clientWidth))+1),c=g.parentNode.querySelector('.gal-n');if(c)c.textContent=k+'/'+n},true);
-function readImg(file){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const sc=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.72))};im.onerror=rej;im.src=u})}
+function readImg(file,mx,q){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();im.onload=()=>{const sc=Math.min(1,(mx||900)/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',q||.72))};im.onerror=rej;im.src=u})}
 const VIEWS=['wishlist','factory','mine','inbox'];
 function setView(v){UI.view=VIEWS.includes(v)?v:'feed';renderChrome();renderView()}
 function renderView(){if(io)io.disconnect();const v=UI.view;if(v==='feed')renderFeed();else if(v==='wishlist')renderWish();else if(v==='mine')renderMine();else if(v==='inbox')renderInbox();else renderFactory()}
@@ -1793,7 +1802,7 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Enter'&&e.target.matches('tr[data-act="f-row"],.hero-mini[data-act="hero-peek"],.hero[data-act="hero-tap"]'))e.target.click();
  if(e.key==='Enter'&&e.target.id==='codeIn'){e.preventDefault();applyCode(byId(e.target.closest('form').dataset.pid))}
 });
-function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h==='terms'){openModal(termsHTML(),'terms');return}if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
+function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h==='terms'){openModal(termsHTML(),'terms');return}if(h.startsWith('verify-')&&LIVE){openVerify(h.slice(7));return}if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
 window.addEventListener('hashchange',route);
 
 /* ---------- live data layer (Supabase over plain fetch: no library, fast load) ----------
@@ -1907,6 +1916,86 @@ async function facAuth(f,up){const err=$('#fa-err'),btn=f.querySelector('button.
   if(up)await rest('POST','factories',{handle,name,country:f.country.value.trim()||null,website:f.web.value.trim()||null},'return=minimal');
   await liveLoad();render();toast(up?T('facWelcome'):T('facHi'));
  }catch(e){const s=e.message||'';fail(/already registered|already exists/i.test(s)?T('emailTaken'):/invalid login|invalid credentials/i.test(s)?T('authBad'):/duplicate|unique/i.test(s)?T('handleTaken'):/password/i.test(s)?T('pwHint'):T('netErr'))}}
+/* ---- "Original idea from Tamanna" QR badges ----
+   The QR opens a certificate (#verify-CODE) naming only the licensed factory: never other or cheaper sellers.
+   A plain idea-page QR (made by someone without a licence) shows no certificate. Licences are issued by
+   officials (manually until payments are on). Fake-badge reports need a saved account, a purchase proof from
+   that same store and a photo of the badge; officials verify against the licence list, then the proofs are deleted. */
+const VERIFY_URL=c=>SHARE_BASE+'#verify-'+c;
+async function pubRpc(fn,args){const r=await fetch(SB.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:SB.key,'Content-Type':'application/json'},body:JSON.stringify(args||{})});if(!r.ok)throw new Error('http '+r.status);const t=await r.text();return t?JSON.parse(t):null}
+const vBoxHTML=()=>`<form class="sug-f" data-form="verify"><input class="inp" name="c" placeholder="TM-XXXXXXXX" dir="ltr" autocomplete="off" spellcheck="false" required aria-label="${T('vCheck')}"><button class="btn sm">${T('vCheckBtn')}</button></form>`;
+async function openVerify(code){openModal(`<p class="muted">…</p>`,'verify');let d=null;try{d=await pubRpc('verify_badge',{p_code:code})}catch(e){}if(UI.modal==='verify')$('#mc').innerHTML=verifyHTML(d)}
+function verifyHTML(d){
+ if(!d||d.status!=='active')return `<div class="cert bad"><h2>⚠️ ${T(d?'vRevT':'vBadT')}</h2><p>${T(d?'vRevD':'vBadD')}</p><b style="font-size:13.5px">${T('vCheck')}</b>${vBoxHTML()}<a class="link" href="#">${T('vHome')}</a></div>`;
+ const i=d.idea,dt=new Intl.DateTimeFormat(LOC[S.me.lang]||'en',{year:'numeric',month:'long',day:'numeric'});
+ return `<div class="cert ok"><span class="cert-seal">✓</span><h2>${T('vOkT')}</h2><p class="cert-fac">${T('vOkBy')(`<b>${esc(d.factory)}</b>`)}</p>
+ ${i.image?`<img class="c-img" src="${esc(i.image)}" alt="">`:''}<h3>💡 ${esc(i.title)}</h3>
+ <ul class="cert-l"><li>${T('vAuthor')}: <b>${i.author?esc(i.author):T('anon')}${i.official?' ✓':''}</b></li><li>${T('vPosted')}: ${dt.format(new Date(i.created))}</li><li>⭐ ${T('vWishes')(`<b class="tnum">${fmt(i.wishes)}</b>`)}</li><li>${T('vCode')}: <code dir="ltr">TM-${esc(d.code)}</code> · ${dt.format(new Date(d.issued))}</li></ul>
+ <p class="muted" style="font-size:12.5px;line-height:1.6">${T('vNote')}</p><a class="btn sm" href="#">${T('vHome')}</a></div>`}
+const badgeNoteHTML=i=>`<p class="badge-note">🏷️ ${T('bnText')} <button class="link" data-act="report" data-pid="${i.id}">${T('bnReport')}</button></p>`;
+function reportHTML(i){if(!savedAcct())return `<h2>🚩 ${T('rpT')}</h2><p>${T('rpNeedAcct')}</p><button class="btn pri" data-act="acct-open" data-v="save">${T('acctSaveBtn')}</button>`;
+ return `<h2>🚩 ${T('rpT')}</h2><p class="muted" style="font-size:13px">${esc(tx(i.title))}</p><p class="muted" style="font-size:13px;line-height:1.6">${T('rpIntro')}</p>
+ <form class="edit" data-form="report" data-pid="${i.id}"><label class="fld">${T('rpStore')}<input name="store" required minlength="2" maxlength="120"></label>
+ <label class="fld">${T('rpUrl')}<input name="url" type="url" dir="ltr" maxlength="300" placeholder="https://"></label>
+ <label class="fld">🧾 ${T('rpProof')}<input name="proof" type="file" accept="image/*" required><small class="muted">${T('rpProofHint')}</small></label>
+ <label class="fld">🏷️ ${T('rpBadge')}<input name="badge" type="file" accept="image/*" required></label>
+ <label class="fld">${T('rpNote')}<textarea name="note" rows="2" maxlength="600"></textarea></label>
+ <p class="err" id="rp-err" hidden></p><button class="btn pri wide">${T('rpSend')}</button></form>`}
+async function upReport(path,file){const at=await token(),blob=await (await fetch(await readImg(file,1600,.8))).blob();const r=await fetch(`${SB.url}/storage/v1/object/reports/${path}`,{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+at,'Content-Type':'image/jpeg'},body:blob});if(!r.ok)throw new Error('upload '+r.status)}
+async function sendReport(f){const err=$('#rp-err'),btn=f.querySelector('button.pri'),fail=m=>{err.textContent=m;err.hidden=false;btn.disabled=false};err.hidden=true;btn.disabled=true;
+ try{const id=crypto.randomUUID(),p=`${sess.uid}/${id}-proof.jpg`,b=`${sess.uid}/${id}-badge.jpg`;
+  await upReport(p,f.proof.files[0]);await upReport(b,f.badge.files[0]);
+  await rest('POST','badge_reports',{id,idea_id:f.dataset.pid,store_name:f.store.value.trim(),store_url:f.url.value.trim()||null,note:f.note.value.trim()||null,purchase_path:p,badge_path:b},'return=minimal');
+  closeModal();toast(T('rpDone'))}catch(e){fail(/report_limit/.test(e.message||'')?T('rpLimit'):T('netErr'))}}
+/* factory: my badges + downloadable badge image with QR (QR library is loaded only when needed) */
+function loadQR(){return window.qrcode?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+async function myBadgesHTML(){let l=[];try{l=await rest('POST','rpc/my_licenses',{})||[]}catch(e){}
+ return `<h2>🏷️ ${T('myBadges')}</h2>${l.length?`<ul class="lic-l">${l.map(x=>`<li><b>${esc(x.title)}</b><small class="muted" dir="ltr">TM-${esc(x.code)}</small>${x.status==='active'?`<button class="btn sm pri" data-act="badge-dl" data-c="${esc(x.code)}" data-w="${x.wishes}">⬇️ ${T('badgeDl')}</button>`:`<span class="late-t">${T('vRevT')}</span>`}</li>`).join('')}</ul>`:`<p class="muted">${T('noBadges')}</p><button class="btn sm" data-act="plans">📦 ${T('subL')}</button>`}`}
+async function downloadBadge(code,wishes){await loadQR();const W=900,H=1150,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),F='system-ui,"Segoe UI","Noto Sans Arabic",Tahoma,sans-serif';
+ x.fillStyle='#FFFFFF';x.fillRect(0,0,W,H);x.strokeStyle='#2E2A6E';x.lineWidth=14;x.strokeRect(7,7,W-14,H-14);
+ x.fillStyle='#2E2A6E';x.fillRect(0,0,W,170);x.fillStyle='#FBBF24';x.font=`800 64px ${F}`;x.textAlign='center';x.fillText('✓ Original idea from Tamanna',W/2,100);x.fillStyle='#FFFFFF';x.font=`700 40px ${F}`;x.direction='rtl';x.fillText('فكرة أصلية من تمنّى',W/2,150);x.direction='ltr';
+ x.fillStyle='#1B1A2E';x.font=`700 40px ${F}`;x.fillText(`⭐ ${Number(wishes||0).toLocaleString('en')} people wished for it`,W/2,240);
+ const q=qrcode(0,'M');q.addData(VERIFY_URL(code));q.make();const n=q.getModuleCount(),cell=Math.floor(600/n),sz=cell*n,ox=(W-sz)/2,oy=290;x.fillStyle='#1B1A2E';for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))x.fillRect(ox+k*cell,oy+r*cell,cell,cell);
+ x.font=`800 46px ui-monospace,Consolas,monospace`;x.fillText('TM-'+code,W/2,oy+sz+75);x.fillStyle='#67667B';x.font=`500 34px ${F}`;x.fillText('Scan to verify  ·  امسح للتحقق',W/2,oy+sz+130);x.font=`600 28px ui-monospace,Consolas,monospace`;x.fillText('tamannaideas.github.io',W/2,H-40);
+ const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download=`tamanna-badge-TM-${code}.png`;document.body.appendChild(a);a.click();a.remove()}
+/* officials: issue licences, see all, review reports */
+async function adminHTML(){let lic=[],reps=[];try{[lic,reps]=await Promise.all([rest('POST','rpc/all_licenses',{}),rest('GET','badge_reports?select=id,idea_id,store_name,store_url,note,purchase_path,badge_path,status,created_at&status=eq.pending&order=created_at.asc')])}catch(e){}
+ const sign=async p=>{try{const r=await fetch(`${SB.url}/storage/v1/object/sign/reports/${p}`,{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({expiresIn:900})});const j=await r.json();return j.signedURL?SB.url+'/storage/v1'+j.signedURL:''}catch(e){return ''}};
+ const R=await Promise.all((reps||[]).map(async r=>Object.assign(r,{pu:await sign(r.purchase_path),bu:await sign(r.badge_path)})));
+ return `<h2>🏷️ ${T('adminT')}</h2>
+ <section class="adm"><h3>${T('admIssue')}</h3><form class="edit" data-form="issue"><div class="two"><label class="fld">${T('admHandle')}<input name="h" required dir="ltr" placeholder="@factory"></label><label class="fld">${T('admIdea')}<input name="i" required dir="ltr" placeholder="https://tamannaideas.github.io/#idea-…"></label></div>
+ <div class="two"><label class="fld">${T('admPrice')}<input name="p" type="number" min="0" step="0.01" required></label><label class="fld">${T('curL')}<select class="inp" name="c">${curOptions('EUR')}</select></label></div>
+ <label class="fld">${T('admProof')}<input name="u" type="url" dir="ltr" placeholder="https://"></label><p class="err" id="adm-err" hidden></p><button class="btn pri">${T('admIssueBtn')}</button></form><div id="adm-out"></div></section>
+ <section class="adm"><h3>${T('admReports')} (${fmt(R.length)})</h3>${R.length?R.map(r=>`<div class="rep"><b>🏪 ${esc(r.store_name)}</b>${r.store_url?` <a class="link" dir="ltr" href="${esc(r.store_url)}" target="_blank" rel="noopener noreferrer">${esc(r.store_url.slice(0,60))} ↗</a>`:''}<small class="muted">${esc(tx((byId(r.idea_id)||{}).title)||'')} · ${ago(Date.parse(r.created_at))}</small>${r.note?`<p>${esc(r.note)}</p>`:''}<div class="rep-imgs"><a href="${r.pu}" target="_blank" rel="noopener noreferrer"><img src="${r.pu}" alt="${T('rpProof')}"><small>🧾 ${T('rpProof')}</small></a><a href="${r.bu}" target="_blank" rel="noopener noreferrer"><img src="${r.bu}" alt="${T('rpBadge')}"><small>🏷️ ${T('rpBadge')}</small></a></div><p class="muted" style="font-size:12.5px">${T('admHow')}</p><div class="row"><button class="btn sm danger" data-act="rep-decide" data-id="${r.id}" data-s="confirmed" data-p="${esc(r.purchase_path)}" data-b="${esc(r.badge_path)}">${T('admFake')}</button><button class="btn sm" data-act="rep-decide" data-id="${r.id}" data-s="rejected" data-p="${esc(r.purchase_path)}" data-b="${esc(r.badge_path)}">${T('admReject')}</button></div></div>`).join(''):`<p class="muted">${T('admNoReports')}</p>`}</section>
+ <section class="adm"><h3>${T('admAll')} (${fmt((lic||[]).length)})</h3>${(lic||[]).length?`<ul class="lic-l">${lic.map(l=>`<li><b>${esc(l.title)}</b><small>${esc(l.factory)} <span dir="ltr">${esc(l.handle)}</span> · ${l.price!=null?esc(l.price+' '+(l.currency||'')):''}</small><small dir="ltr">TM-${esc(l.code)}</small>${l.status==='active'?`<button class="btn sm ghost" data-act="lic-revoke" data-c="${esc(l.code)}">${T('admRevoke')}</button>`:`<span class="late-t">${T('vRevT')}</span>`}</li>`).join('')}</ul>`:`<p class="muted">—</p>`}</section>`}
+async function openAdmin(){openModal('<p class="muted">…</p>','admin');$('#mc').innerHTML=await adminHTML()}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-act="verify-open"],[data-act="report"],[data-act="my-badges"],[data-act="badge-dl"],[data-act="admin-badges"],[data-act="rep-decide"],[data-act="lic-revoke"]');if(!b)return;e.preventDefault();const a=b.dataset.act;
+ if(a==='verify-open')openModal(`<h2>🔎 ${T('vCheck')}</h2><p class="muted" style="font-size:13px">${T('vCheckD')}</p>${vBoxHTML()}`,'verify');
+ else if(a==='report'){const i=byId(b.dataset.pid);if(i)openModal(reportHTML(i),'report')}
+ else if(a==='my-badges'){openModal('<p class="muted">…</p>','badges');$('#mc').innerHTML=await myBadgesHTML()}
+ else if(a==='badge-dl'){b.disabled=true;try{await downloadBadge(b.dataset.c,b.dataset.w)}catch(err){toast(T('netErr'))}b.disabled=false}
+ else if(a==='admin-badges')openAdmin();
+ else if(a==='rep-decide'){b.disabled=true;try{await rest('POST','rpc/decide_report',{p_id:b.dataset.id,p_status:b.dataset.s});await fetch(`${SB.url}/storage/v1/object/reports`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:[b.dataset.p,b.dataset.b]})});toast(T(b.dataset.s==='confirmed'?'admFakeT':'admRejectT'));openAdmin()}catch(err){toast(T('netErr'));b.disabled=false}}
+ else if(a==='lic-revoke'){if(!confirm(T('admRevokeQ')))return;try{await rest('POST','rpc/revoke_license',{p_code:b.dataset.c});openAdmin()}catch(err){toast(T('netErr'))}}});
+document.addEventListener('submit',async e=>{const f=e.target,k=f.dataset.form;if(k!=='verify'&&k!=='report'&&k!=='issue')return;e.preventDefault();
+ if(k==='verify'){const c=f.c.value.trim().toUpperCase().replace(/^TM-?V?-?/,'');if(c){closeModal(true);location.hash='#verify-'+c}}
+ else if(k==='report')sendReport(f);
+ else{const err=$('#adm-err'),m=(f.i.value.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)||[])[0];err.hidden=true;if(!m){err.textContent=T('admBadIdea');err.hidden=false;return}
+  let h=f.h.value.trim().toLowerCase();if(h&&h[0]!=='@')h='@'+h;
+  try{const code=await rest('POST','rpc/issue_license',{p_idea:m,p_handle:h,p_price:parseFloat(f.p.value),p_currency:f.c.value,p_proof:f.u.value.trim()||null});$('#adm-out').innerHTML=`<p class="ok-t">✓ ${T('admIssued')} <code dir="ltr">TM-${esc(code)}</code></p><p class="muted" dir="ltr" style="font-size:12.5px">${esc(VERIFY_URL(code))}</p>`;f.reset()}
+  catch(er){err.textContent=/factory_not_found/.test(er.message)?T('admNoFac'):/idea_not_found/.test(er.message)?T('admBadIdea'):T('netErr');err.hidden=false}}});
+Object.assign(L.ar,{vCheck:'تحقق من شارة',vCheckD:'اكتب الكود المطبوع تحت رمز QR على المنتج.',vCheckBtn:'تحقق',vBadT:'هذه الشارة غير صالحة',vBadD:'لا يوجد ترخيص بهذا الكود. المنتج الذي عليه هذه الشارة ليس مرخّصاً من تمنّى.',vRevT:'الترخيص ملغى',vRevD:'هذا الترخيص أُلغي، فالشارة لم تعد صالحة.',vHome:'اكتشف تمنّى ←',vOkT:'المنتج الأصلي لفكرة من تمنّى',vOkBy:f=>`هذا المنتج من ${f}، مرخّص من تمنّى ✓`,vAuthor:'صاحب الفكرة',vPosted:'نُشرت الفكرة',vWishes:n=>`${n} شخصاً تمنّوها`,vCode:'كود الشارة',vNote:'تمنّى منصة ينشر فيها الناس منتجات يتمنون وجودها، وتصنعها المصانع. هذه الشهادة تؤكد أن هذا المصنع مرخّص لاستخدام شارة الفكرة الأصلية.',
+ bnText:'اشتريت منتجاً عليه شارة تمنّى؟ الشارة الأصلية تفتح صفحة شهادة باسم المصنع؛ إذا فتحت هذه الصفحة العادية فالشارة غير أصلية.',bnReport:'بلّغ عن شارة مزوّرة',
+ rpT:'بلاغ عن شارة مزوّرة',rpNeedAcct:'للإبلاغ لازم يكون حسابك محفوظاً بإيميل، حتى نتواصل معك ونمنع البلاغات الكاذبة.',rpIntro:'نحتاج دليلين: إثبات أنك اشتريت من هذا المتجر، وصورة الشارة على المنتج. نتحقق بأنفسنا، واسمك لا يظهر للمتجر، ونحذف صورك بعد القرار.',rpStore:'اسم المتجر أو المصنع الذي اشتريت منه',rpUrl:'رابط المنتج أو المتجر (اختياري)',rpProof:'إثبات الشراء (فاتورة أو تأكيد الطلب)',rpProofHint:'يظهر فيه اسم المتجر والمنتج والتاريخ. غطِّ عنوانك وبيانات البطاقة قبل التصوير.',rpBadge:'صورة الشارة على المنتج أو العلبة',rpNote:'ملاحظات (اختياري)',rpSend:'إرسال البلاغ',rpDone:'وصل بلاغك، شكراً لك. سنتحقق منه.',rpLimit:'وصلت للحد: ٣ بلاغات في الشهر.',
+ myBadges:'شاراتي',badgeDl:'تحميل الشارة',noBadges:'ليس لديك شارات بعد. شارة «فكرة أصلية من تمنّى» لمن يبيع الفكرة خارج تمنّى.',
+ adminT:'إدارة الشارات',admIssue:'إصدار ترخيص شارة',admHandle:'اسم مستخدم المصنع',admIdea:'رابط الفكرة',admPrice:'سعر بيع المصنع',admProof:'رابط صفحة المنتج عند المصنع',admIssueBtn:'إصدار الترخيص',admIssued:'صدر الترخيص:',admNoFac:'لا يوجد مصنع بهذا الاسم.',admBadIdea:'رابط الفكرة غير صحيح.',admReports:'بلاغات بانتظار المراجعة',admNoReports:'لا توجد بلاغات.',admHow:'تحقق: هل اسم المتجر في الفاتورة هو نفسه في البلاغ؟ وهل المتجر غير موجود في قائمة التراخيص لهذه الفكرة؟',admFake:'✓ مزوّرة فعلاً',admReject:'✗ رفض البلاغ',admFakeT:'سُجّلت الشارة كمزوّرة، وحُذفت صور البلاغ.',admRejectT:'رُفض البلاغ، وحُذفت صوره.',admAll:'كل التراخيص',admRevoke:'إلغاء',admRevokeQ:'إلغاء هذا الترخيص؟ ستصبح الشارة غير صالحة.'});
+Object.assign(L.en,{vCheck:'Verify a badge',vCheckD:'Enter the code printed under the QR on the product.',vCheckBtn:'Verify',vBadT:'This badge is not valid',vBadD:'There is no licence with this code. The product carrying this badge is not licensed by Tamanna.',vRevT:'Licence revoked',vRevD:'This licence was revoked, so the badge is no longer valid.',vHome:'Discover Tamanna →',vOkT:'The original product of a Tamanna idea',vOkBy:f=>`This product is by ${f}, licensed by Tamanna ✓`,vAuthor:'Idea by',vPosted:'Idea posted',vWishes:n=>`${n} people wished for it`,vCode:'Badge code',vNote:'Tamanna is a platform where people post products they wish existed, and factories make them. This certificate confirms the factory is licensed to use the original-idea badge.',
+ bnText:'Bought a product with a Tamanna badge? A genuine badge opens a certificate naming the factory; if it opened this regular page, the badge isn’t genuine.',bnReport:'Report a fake badge',
+ rpT:'Report a fake badge',rpNeedAcct:'To report, save your account with an email first, so we can contact you and prevent false reports.',rpIntro:'We need two proofs: that you bought from this store, and a photo of the badge on the product. We verify it ourselves, your name is never shown to the store, and your photos are deleted after the decision.',rpStore:'Store or factory you bought from',rpUrl:'Product or store link (optional)',rpProof:'Proof of purchase (invoice or order confirmation)',rpProofHint:'It must show the store name, product and date. Cover your address and card details before taking the photo.',rpBadge:'Photo of the badge on the product or box',rpNote:'Notes (optional)',rpSend:'Send report',rpDone:'Report received, thank you. We’ll verify it.',rpLimit:'Limit reached: 3 reports per month.',
+ myBadges:'My badges',badgeDl:'Download badge',noBadges:'No badges yet. The “Original idea from Tamanna” badge is for factories selling an idea outside Tamanna.',
+ adminT:'Badge admin',admIssue:'Issue a badge licence',admHandle:'Factory username',admIdea:'Idea link',admPrice:'Factory’s selling price',admProof:'Link to the product page at the factory',admIssueBtn:'Issue licence',admIssued:'Licence issued:',admNoFac:'No factory with this username.',admBadIdea:'The idea link isn’t valid.',admReports:'Reports awaiting review',admNoReports:'No reports.',admHow:'Check: is the store on the invoice the same as in the report, and is that store missing from this idea’s licences?',admFake:'✓ Confirmed fake',admReject:'✗ Reject report',admFakeT:'Marked as fake; report photos deleted.',admRejectT:'Report rejected; photos deleted.',admAll:'All licences',admRevoke:'Revoke',admRevokeQ:'Revoke this licence? The badge will become invalid.'});
+Object.assign(L.zh,{myBadges:'我的徽章',badgeDl:'下载徽章',noBadges:'还没有徽章。“来自 Tamanna 的原创创意”徽章适用于在 Tamanna 以外销售该创意的工厂。'});
+Object.assign(L.tr,{myBadges:'Rozetlerim',badgeDl:'Rozeti indir',noBadges:'Henüz rozetin yok. “Tamanna’dan orijinal fikir” rozeti, fikri Tamanna dışında satan fabrikalar içindir.'});
 /* ---- Terms of use & privacy (Arabic and English; other languages show English, which prevails). Starting version, to be
    reviewed by a lawyer before real payments. Reachable from More, the factory sign-up form, and /#terms. ---- */
 function termsHTML(){const ar=S.me.lang==='ar';return `<div class="terms" dir="${ar?'rtl':'ltr'}">${ar?TERMS_AR:TERMS_EN}</div>`}
@@ -2006,7 +2095,7 @@ let OFFICIAL=false;
 const normName=s=>String(s||'').toLowerCase().replace(/[ً-ْٰـ\s\p{P}\p{S}]/gu,'').replace(/[إأآٱ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه');
 const isReservedName=s=>{const n=normName(s);return !!s&&/تمني|تمنا|tamann|tamana|tamenna/.test(n)};
 function whoHTML(i){return `${i.author?esc(i.author):T('anon')}${i.official?` <span class="off-b" title="${T('officialL')}" aria-label="${T('officialL')}">✓</span>`:''}`}
-function teamHTML(){return `<h2>✓ ${T('teamT')}</h2>${OFFICIAL?`<p class="ok-t">${T('teamIn')}</p><button class="btn" data-act="team-logout">${T('facLogout')}</button>`:
+function teamHTML(){return `<h2>✓ ${T('teamT')}</h2>${OFFICIAL?`<p class="ok-t">${T('teamIn')}</p><div class="row"><button class="btn pri" data-act="admin-badges">🏷️ ${T('adminT')}</button><button class="btn" data-act="team-logout">${T('facLogout')}</button></div>`:
  `${sess&&FAC===null&&!OFFICIAL&&S.me.teamTried?`<p class="err">${T('teamNot')}</p>`:''}<form class="edit" data-form="team-login"><label class="fld">${T('emailL')}<input name="email" type="email" required dir="ltr" autocomplete="email"></label><label class="fld">${T('pwL')}<input name="pw" type="password" required minlength="8" dir="ltr" autocomplete="current-password"></label><p class="err" id="tm-err" hidden></p><div class="row"><button class="btn pri">${T('facLogin')}</button><button type="button" class="btn ghost" data-act="team-signup">${T('teamCreate')}</button></div><p class="muted" style="font-size:12.5px;line-height:1.6">${T('teamNote')}</p></form>`}`}
 async function teamAuth(f,up){const err=$('#tm-err'),fail=m=>{err.textContent=m;err.hidden=false};err.hidden=true;
  if(!f.reportValidity())return;
@@ -2039,10 +2128,10 @@ if(S.me.langAuto)S.me.lang=deviceUiLang();
 enforce();
 const h0=location.hash.slice(1);
 UI.view=VIEWS.includes(h0)?h0:'feed';
-if(!S.me.langSeen){UI.langOpen=true;UI.langWelcome=true;UI.langT=setTimeout(closeLang,20000)}
+if(!S.me.langSeen){UI.langOpen=true;UI.langWelcome=true;UI.langT=setTimeout(closeLang,10000)}
 if(LIVE){document.body.classList.add('live');if(sess&&sess.uid)S.me.token=sess.uid}
 render();
-if(h0.startsWith('idea-')||h0==='team'||h0==='terms')route();
+if(h0.startsWith('idea-')||h0.startsWith('verify-')||h0==='team'||h0==='terms')route();
 if(LIVE){liveRefresh();document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-liveAt>60e3)liveRefresh()})}
 /* AI translation lights up only where the viewer can use it */
 if(window.claude&&typeof window.claude.use==='function'){window.claude.use('downloads').then(d=>{if(d)DL.fn=d}).catch(()=>{})}
