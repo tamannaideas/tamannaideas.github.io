@@ -1990,8 +1990,12 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act=
  else if(a==='my-badges'){openModal('<p class="muted">…</p>','badges');$('#mc').innerHTML=await myBadgesHTML()}
  else if(a==='badge-dl'){b.disabled=true;try{await downloadBadge(b.dataset.c,b.dataset.w)}catch(err){toast(T('netErr'))}b.disabled=false}
  else if(a==='admin-badges')openAdmin();
- else if(a==='rep-decide'){b.disabled=true;try{await rest('POST','rpc/decide_report',{p_id:b.dataset.id,p_status:b.dataset.s});await fetch(`${SB.url}/storage/v1/object/reports`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:[b.dataset.p,b.dataset.b]})});toast(T(b.dataset.s==='confirmed'?'admFakeT':'admRejectT'));openAdmin()}catch(err){toast(T('netErr'));b.disabled=false}}
- else if(a==='lic-revoke'){if(!confirm(T('admRevokeQ')))return;try{await rest('POST','rpc/revoke_license',{p_code:b.dataset.c});openAdmin()}catch(err){toast(T('netErr'))}}});
+ else if(a==='rep-decide'){b.disabled=true;try{await rest('POST','rpc/decide_report',{p_id:b.dataset.id,p_status:b.dataset.s});await fetch(`${SB.url}/storage/v1/object/reports`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:[b.dataset.p,b.dataset.b]})});toast(T(b.dataset.s==='confirmed'?'admFakeT':'admRejectT'));
+   /* update in place: the panel stays open and keeps its scroll position */
+   const card=b.closest('.rep'),sec=card&&card.closest('.adm');if(card)card.remove();
+   if(sec){const left=sec.querySelectorAll('.rep').length,h=sec.querySelector('h3');if(h)h.textContent=`${T('admReports')} (${fmt(left)})`;if(!left)sec.insertAdjacentHTML('beforeend',`<p class="muted">${T('admNoReports')}</p>`)}}
+  catch(err){toast(T('netErr'));b.disabled=false}}
+ else if(a==='lic-revoke'){if(!confirm(T('admRevokeQ')))return;try{await rest('POST','rpc/revoke_license',{p_code:b.dataset.c});b.outerHTML=`<span class="late-t">${T('vRevT')}</span>`}catch(err){toast(T('netErr'))}}});
 document.addEventListener('submit',async e=>{const f=e.target,k=f.dataset.form;if(k!=='verify'&&k!=='report'&&k!=='issue')return;e.preventDefault();
  if(k==='verify'){const c=f.c.value.trim().toUpperCase().replace(/^TM-?V?-?/,'');if(c){closeModal(true);location.hash='#verify-'+c}}
  else if(k==='report')sendReport(f);
