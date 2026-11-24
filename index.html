@@ -74,8 +74,9 @@ p{margin:0}
 .badge-n:empty{display:none}
 .dot{position:absolute;top:5px;inset-inline-end:5px;width:8px;height:8px;border-radius:50%;background:var(--verify);border:2px solid var(--bg)}
 .tabs{max-width:1280px;margin:0 auto}
-.tabs-in{display:grid;grid-template-columns:1fr 1fr;gap:0}
-.tab{padding:11px 8px 12px;font-weight:700;color:var(--muted);position:relative;font-size:15px}
+.tabs-in{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.tab{padding:11px 6px 12px;font-weight:700;color:var(--muted);position:relative;font-size:15px;white-space:nowrap}
+@media (max-width:420px){.tab{font-size:13.5px;padding-inline:4px}}
 .tab.on{color:var(--fg)}
 .tab.on::after{content:"";position:absolute;inset-inline:22%;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:var(--wish)}
 
@@ -1093,7 +1094,7 @@ function renderChrome(){
   <button class="icon-btn m-only nav-msg${v==='inbox'?' on':''}" data-act="nav" data-v="inbox" data-nav="inbox" aria-label="${T('navMsgs')}">${I.chat}<span class="badge-n">${inboxUnread()||''}</span></button>
   <div class="lang-wrap"><button class="icon-btn lang-btn" data-act="lang-menu" aria-haspopup="true" aria-expanded="${UI.langOpen}" aria-label="Language">${I.globe}<span>${LCODE[S.me.lang]}</span></button>${UI.langOpen?`<div class="lang-pop" id="langPop" role="menu"><p>Choose your language · اختر لغتك · 选择语言 · Dilini seç</p><button role="menuitemradio" aria-checked="${!!S.me.langAuto}" data-act="setlang" data-l="auto" class="${S.me.langAuto?'on':''}">${I.globe} ${T('deviceLang')}<small>${esc(langName(autoCode()))}</small></button>${LANGS.map(([c,n])=>{const on=!S.me.langAuto&&S.me.lang===c;return `<button role="menuitemradio" aria-checked="${on}" data-act="setlang" data-l="${c}" class="${on?'on':''}">${n}<small>${LCODE[c]}</small></button>`}).join('')}<p class="lp-disc">${T('uiDisclaim')}</p>${UI.langWelcome?'<i class="timer" aria-hidden="true"></i>':''}</div>`:''}</div>
   <button class="icon-btn" data-act="more" aria-label="${T('more')}">${I.dots}</button></div></div>
-  ${v==='feed'?`<div class="tabs gut"><div class="tabs-in" role="tablist"><button role="tab" class="tab ${UI.tab==='new'?'on':''}" aria-selected="${UI.tab==='new'}" data-act="tab" data-v="new">${T('tabNew')}</button><button role="tab" class="tab ${UI.tab==='top'?'on':''}" aria-selected="${UI.tab==='top'}" data-act="tab" data-v="top">${T('tabTop')}</button></div></div>`:''}`;
+  ${v==='feed'?`<div class="tabs gut"><div class="tabs-in" role="tablist"><button role="tab" class="tab ${UI.tab==='new'?'on':''}" aria-selected="${UI.tab==='new'}" data-act="tab" data-v="new">${T('tabNew')}</button><button role="tab" class="tab ${UI.tab==='top'?'on':''}" aria-selected="${UI.tab==='top'}" data-act="tab" data-v="top">${T('tabTop')}</button><button role="tab" class="tab ${UI.tab==='made'?'on':''}" aria-selected="${UI.tab==='made'}" data-act="tab" data-v="made">${T('tabMade')}</button></div></div>`:''}`;
  $('#bnav').innerHTML=`${nb('feed',I.home,T('navFeed'))}${nb('wishlist',I.star,T('navWish'))}<button class="bpost" data-act="compose-open"><span class="pl">${I.plus}</span><span>${T('navPost')}</span></button>${nb('mine',I.bulb,T('navMine'))}<button data-act="more">${I.dots}<span>${T('navMore')}</span></button>`;
 }
 function updateBadges(){const ib=inboxUnread();document.querySelectorAll('[data-nav="inbox"] .badge-n').forEach(e=>{e.textContent=ib||''});const a=mineAlert();document.querySelectorAll('[data-nav="mine"]').forEach(b=>{const d=b.querySelector('.dot');if(a&&!d)b.insertAdjacentHTML('beforeend','<span class="dot"></span>');if(!a&&d)d.remove()});const n=wishIds().length,u=unseenAvail()+pendingPledges();document.querySelectorAll('[data-nav="wishlist"]').forEach(b=>{const e=b.querySelector('.badge-n');if(e)e.textContent=n||'';const d=b.querySelector('.dot');if(u&&!d)b.insertAdjacentHTML('beforeend','<span class="dot"></span>');if(!u&&d)d.remove()})}
@@ -1197,11 +1198,19 @@ function composeHTML(){
  <div class="row"><button class="btn pri">${T('publish')}</button><button type="button" class="btn ghost" data-act="compose-cancel">${T('cancel')}</button></div>
  <p class="open-note">${I.open}<span>${T('openNote')}</span></p></form>`;
 }
-function sortedFeed(){const l=S.ideas.slice();return UI.tab==='top'?l.sort((a,b)=>yesN(b)-yesN(a)):l.sort((a,b)=>b.created-a.created)}
+/* Three lists. "Most wished" leaves out ideas already made; "Made" holds them, ordered by their latest rise to the top:
+   a product rises once when it's made, and (with payments) its maker can pay to raise it again, one-off or scheduled.
+   Every rise is temporary: newer products or rises push it down. Idea lists stay equal for everyone. */
+const isMadeIdea=i=>i.status&&i.status!=='open';
+const riseTs=i=>Math.max(i.madeTs||madeAt(i)||0,...(i.rises||[]).filter(t=>t<=Date.now()));
+function sortedFeed(){const l=S.ideas.slice();
+ if(UI.tab==='top')return l.filter(i=>!isMadeIdea(i)).sort((a,b)=>yesN(b)-yesN(a));
+ if(UI.tab==='made')return l.filter(isMadeIdea).sort((a,b)=>riseTs(b)-riseTs(a));
+ return l.sort((a,b)=>b.created-a.created)}
 let io;
 function renderFeed(){
  const list=sortedFeed();
- $('#view').innerHTML=`<div class="col">${heroHTML()}${composeHTML()}<div class="feed" id="feed">${list.slice(0,UI.limit).map(cardHTML).join('')}</div>${list.length>UI.limit?'<div id="sentinel" style="height:1px"></div>':''}</div>`;
+ $('#view').innerHTML=`<div class="col">${heroHTML()}${composeHTML()}<div class="feed" id="feed">${list.length?list.slice(0,UI.limit).map(cardHTML).join(''):UI.tab==='made'?`<div class="empty-box">🏭<p>${T('madeEmpty')}</p></div>`:''}</div>${list.length>UI.limit?'<div id="sentinel" style="height:1px"></div>':''}</div>`;
  const s=$('#sentinel');if(io)io.disconnect();
  if(s&&'IntersectionObserver' in window){io=new IntersectionObserver(es=>{if(!es[0].isIntersecting)return;const l=sortedFeed(),from=UI.limit;UI.limit+=12;$('#feed').insertAdjacentHTML('beforeend',l.slice(from,UI.limit).map(cardHTML).join(''));if(UI.limit>=l.length){io.disconnect();s.remove()}},{rootMargin:'600px'});io.observe(s)}
  if(UI.composeOpen)updateSimilar();
@@ -1836,7 +1845,7 @@ async function liveLoad(){
  S.me.reacts={};(reacts||[]).forEach(v=>{S.me.reacts[v.idea_id]=v.value});
  const byIdea={};(sugs||[]).forEach(s=>{(byIdea[s.idea_id]||(byIdea[s.idea_id]=[])).push(s)});
  S.ideas=(rows||[]).map(r=>{const o=old.get(r.id)||{},own=mineSet.has(r.id),v=S.me.votes[r.id],rc=S.me.reacts[r.id]||0;
-  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,official:!!r.official,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
+  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,official:!!r.official,madeTs:r.made_at?Date.parse(r.made_at):0,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
    created:Date.parse(r.created_at),yes:r.yes_count-(v==='yes'?1:0),no:r.no_count-(v==='no'?1:0),likes:r.like_count-(rc===1?1:0),dislikes:r.dislike_count-(rc===-1?1:0),w7:o.w7||0,
    comments:(byIdea[r.id]||[]).map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})),
    history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:o.similarTo||[],diff:o.diff||''})});
@@ -2034,6 +2043,7 @@ function plansHTML(){const P=T('plans');return `<h2>📦 ${T('plansT')}</h2><p c
  <p class="muted" style="font-size:12.5px;line-height:1.7">${T('plansRules')}</p>
  <div class="plan qr"><b>🏷️ ${T('qrT')}</b><span class="pr tnum">${moneyIn(49,'EUR')}<small> ${T('qrPer')}</small></span><p style="margin:0;font-size:13px;line-height:1.6">${T('qrD')}</p><p class="qr-safe">${T('qrSafe')}</p></div>`}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-act="plans"]');if(!b)return;e.preventDefault();openModal(plansHTML(),'plans')});
+Object.assign(L.ar,{tabMade:'تم تنفيذها',madeEmpty:'لم تُنفَّذ أي فكرة بعد. لما يصنع مصنع فكرة، تظهر هنا.'});Object.assign(L.en,{tabMade:'Made',madeEmpty:'No idea has been made yet. When a factory makes one, it appears here.'});Object.assign(L.zh,{tabMade:'已实现',madeEmpty:'还没有被生产的创意。工厂生产后会显示在这里。'});Object.assign(L.tr,{tabMade:'Üretildi',madeEmpty:'Henüz üretilen fikir yok. Bir fabrika ürettiğinde burada görünür.'});
 Object.assign(L.ar,{myAcct:'حسابي',acAnon:'حساب مجهول على هذا الجهاز فقط',acSaved:'حساب محفوظ بإيميل ✓',acFac:'حساب مصنع',acOfficial:'الحساب الرسمي Tamanna Team ✓',acAnonHint:'إذا غيّرت جهازك أو مسحت بيانات المتصفح تضيع أمنياتك. احفظ حسابك ليبقى معك على أي جهاز.'});
 Object.assign(L.en,{myAcct:'My account',acAnon:'Anonymous, on this device only',acSaved:'Saved account with email ✓',acFac:'Factory account',acOfficial:'Official Tamanna Team account ✓',acAnonHint:'If you change device or clear browser data, your wishes are lost. Save your account to keep it on any device.'});
 Object.assign(L.zh,{myAcct:'我的账户',acAnon:'匿名,仅限此设备',acSaved:'已用邮箱保存 ✓',acFac:'工厂账户',acOfficial:'Tamanna Team 官方账户 ✓',acAnonHint:'更换设备或清除浏览器数据会丢失你的心愿。保存账户即可在任何设备上使用。'});
