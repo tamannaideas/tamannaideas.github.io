@@ -1,4 +1,4 @@
-# Early warning: every day GitHub checks Tamanna's free limits (and ideas waiting for the team's review).
+# Early warning: every day GitHub checks Tamanna's free limits.
 # If anything reaches 70% of its limit, this run FAILS and GitHub emails the account owner,
 # so there is time to act long before the site breaks. Each run's numbers are in its summary.
 name: usage-check
@@ -38,8 +38,7 @@ jobs:
           q=$(echo "$S" | jq '.queue_left // 99')
           echo "Daily-idea bank left: $q" >> "$GITHUB_STEP_SUMMARY"
           if [ "$q" -le 7 ]; then echo "::error title=Tamanna idea bank::Only $q daily ideas left. Ask Claude to add more to idea_queue."; warn=1; fi
-          # ideas people buried with "Dislike" wait for the team (Tamanna Team account > Admin panel)
+          # the team reviews the bottom of the list 20 at a time; only noted here (the weekly report mentions it), no email
           m=$(echo "$S" | jq '.mod_waiting // 0')
-          echo "Ideas waiting for team review (many dislikes): $m" >> "$GITHUB_STEP_SUMMARY"
-          if [ "$m" -gt 0 ]; then echo "::error title=Tamanna review::$m idea(s) have many dislikes and wait for review. Open the site, sign in as Tamanna Team, Admin panel."; warn=1; fi
+          echo "Ideas in the team's review list: $m" >> "$GITHUB_STEP_SUMMARY"
           exit $warn
