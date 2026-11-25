@@ -342,6 +342,9 @@ body.live .giftf,body.live .fld:has(#mk-c),body.live .fld:has(#mk-f),body.live d
 .seg{display:inline-flex;background:var(--surface-2);border-radius:11px;padding:3px}
 .seg button{padding:7px 13px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--muted)}
 .wl-tabs{display:flex;margin-block:10px 4px}.wl-tabs button{flex:1}
+/* Factory photos of the made product */
+.prod-ph{display:flex;flex-direction:column;gap:6px;margin-block:6px}
+.prod-ph-l{align-self:flex-start;font-size:12.5px;font-weight:700;color:var(--verify-ink,#0E7C66);background:var(--verify-soft,#E6F6F1);border-radius:999px;padding:3px 10px}
 /* Buyer reviews */
 .stars{color:#E39B12;letter-spacing:1px}.stars .st-off{color:var(--muted);opacity:.35}
 .revs{display:flex;flex-direction:column;gap:10px;margin-block:14px}.revs h3{font-size:17px}
@@ -1188,7 +1191,7 @@ function cardHTML(i){
  const own=isOwner(i),v=vote(i),r=react(i),y=yesN(i),tot=y+noN(i),pct=tot?Math.round(y*100/tot):0;
  const title=esc(tx(i.title)),desc=esc(tx(i.desc)),long=tx(i.desc).length>170,ex=UI.expanded.has(i.id),editing=UI.editing===i.id,openC=UI.openC.has(i.id);
  const main=editing&&(!own||isMade(i))?(own?addFormHTML(i):fnoteFormHTML(i)):editing?`<form class="edit" data-form="edit"><label class="fld">${T('fTitle')}<input name="title" id="e-t-${i.id}" value="${title}" required minlength="4" maxlength="90"></label><label class="fld">${T('fDesc')}<textarea name="desc" id="e-d-${i.id}" rows="5" required>${desc}</textarea></label><div class="row"><button class="btn pri sm">${T('save')}</button><button type="button" class="btn ghost sm" data-act="edit-cancel">${T('cancel')}</button>${own&&!isMade(i)?`<button type="button" class="btn danger sm" style="margin-inline-start:auto" data-act="del-idea">${T('delIdea')}</button>`:''}</div>${isMade(i)?`<p class="muted" style="font-size:12.5px;line-height:1.6">${T(own?'revWarn':'propWarn')}</p>`:''}</form>`
-  :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${galHTML(imgsOf(i))}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
+  :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${prodPhotosHTML(i)}${galHTML(imgsOf(i))}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
  return `<article class="card" data-id="${i.id}">
  <div class="c-main"><div class="c-meta"><span class="av">${i.author?esc(i.author[0].toUpperCase()):'?'}</span><b>${whoHTML(i)}</b><span>·</span><time>${ago(i.created)}</time>${i.edited?`<span>· ${T('edited')}</span>`:''}${own?`<span class="chip mine">${T('mine')}</span>`:''}</div>${main}</div>
  <aside class="c-side">${sideHTML(i,own)}</aside>
@@ -1551,6 +1554,7 @@ function makeHTML(i){return `<h2>${T('make')}</h2><p class="muted">${esc(tx(i.ti
  ${pledgeHintHTML(i)}
  <label class="fld">${T('optsL')}<textarea name="opts" id="mk-o" rows="2" placeholder="${T('optsPh')}"></textarea></label>
  <div id="pubf" class="edit"><label class="fld">${T('handlingL')}<select class="inp" name="handling" id="mk-h">${[1,2,3].map(d=>`<option value="${d}"${d===2?' selected':''}>${T('hOpt')(d)}</option>`).join('')}</select></label>
+ ${LIVE?(()=>{const mine=(i.offers||[]).find(o=>o.fac===myHandle()),old=mine?mine.imgs||[]:[];return `<label class="fld">📸 ${T('prodPh')}<input type="file" name="ph" accept="image/*" multiple><small class="muted">${T('prodPhNote')}</small>${old.length?`<small class="muted">${T('prodPhKeep')}</small><div class="rev-imgs">${old.map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>`:''}</label><p class="err" id="mk-ph-err" hidden></p>`})():''}
  <div class="rules"><b>${T('rulesT')}</b><ul>${T('rules').map(r=>`<li>${r}</li>`).join('')}</ul><label class="chk"><input type="checkbox" name="agree" id="mk-ag" required><span>${T('agreeRules')}</span></label></div><p class="fee" id="fee"></p><details class="fld" open><summary>${I.tag} ${T('discOptional')}</summary><div class="edit" style="margin-top:8px">${discFields(null)}</div></details></div>
  <div id="proofF" class="edit" hidden><label class="fld">${T('proofL')}<input name="proof" id="mk-u" type="url" placeholder="https://" dir="ltr" maxlength="300"></label><p class="muted" style="font-size:12.5px">${T('proofNote')}</p></div>
  <div class="giftf"><label class="chk"><input type="checkbox" name="giftOn" id="g-on"><span>${I.gift}${T('giftOn')}</span></label><label class="chk sub" id="g-ship-l" hidden><input type="checkbox" name="giftShip" id="g-ship" checked><span>${T('giftShip')}</span></label></div>
@@ -1567,7 +1571,7 @@ const editableOffer=(i,oid)=>{const o=i&&offerById(i,oid);return o&&o.fac===myHa
 const FEE=0.05;
 function updFee(){const p=parseFloat(($('#mk-p')||{}).value)||0,c=($('#mk-c')||{}).value||myCur(),f=$('#fee');if(f)f.innerHTML=T('feeL')(moneyIn(p*FEE,c),moneyIn(p*(1-FEE),c))}
 function offerRow(o,sel){const r=relOf(o.fac);return `<label class="pm offer"><input type="radio" name="offer" value="${o.id}" id="of-${o.id}"${sel?' checked':''}><span><span class="of-main"><b>${esc(o.factory)}</b><small>${T('shipsIn')(offerDays(o))}</small><small class="${r===null?'':r>=95?'rel':'rel-lo'}">${r===null?T('newSeller'):T('relL')(r)}</small>${o.revN?`<small>${starsAvg(o.revAvg,o.revN)}</small>`:''}</span><span class="of-price tnum">${money(o.price)}<small>+ ${money(o.shipping)}</small></span></span></label>`}
-function buyHTML(i){const p=curOffer(i),live=liveOffers(i),pub=live.includes(p),d=pub?discO(p):null;return `${isPublic(i)?`<button class="badge ver" style="align-self:flex-start" data-act="story" data-pid="${i.id}" title="${T('storyHint')}">${I.mark}<span>${T('verified')}</span>${I.open}</button>`:''}<h2>${esc(tx(i.title))}</h2><p class="muted" style="margin-top:-8px">${esc(p.factory)} · ${money(p.price)}</p>
+function buyHTML(i){const p=curOffer(i),live=liveOffers(i),pub=live.includes(p),d=pub?discO(p):null;return `${isPublic(i)?`<button class="badge ver" style="align-self:flex-start" data-act="story" data-pid="${i.id}" title="${T('storyHint')}">${I.mark}<span>${T('verified')}</span>${I.open}</button>`:''}<h2>${esc(tx(i.title))}</h2><p class="muted" style="margin-top:-8px">${esc(p.factory)} · ${money(p.price)}</p>${(p.imgs||[]).length?`<div class="prod-ph">${galHTML(p.imgs)}</div>`:''}
  <form data-form="buy" data-pid="${i.id}" class="edit">
  ${pub?`<fieldset class="pay"><legend>${T('chooseSeller')}</legend>${live.map(o=>offerRow(o,o===p)).join('')}</fieldset>`:''}
  <p class="prot">${T('protL')}</p><p class="muted" style="font-size:12.5px;line-height:1.6">${T('retRule')}</p>
@@ -1641,6 +1645,9 @@ function fly(r){
 /* Gallery: up to 6 images per idea; one image shows plainly, several become a swipeable strip with a counter and arrows */
 const MAX_IMGS=6;
 const imgsOf=i=>i.imgs&&i.imgs.length?i.imgs:(i.img?[i.img]:[]);
+/* Real photos the selling factory took of the made product, shown above the idea's own pictures */
+function prodPhotosHTML(i){const p=isPublic(i)&&i.product,l=p&&p.imgs||[];if(!l.length)return '';
+ return `<div class="prod-ph"><span class="prod-ph-l">📸 ${T('prodPhBy')(esc(p.factory))}</span>${galHTML(l)}</div>`}
 function galHTML(l){if(!l.length)return '';if(l.length===1)return `<img class="c-img" src="${esc(l[0])}" alt="" loading="lazy" decoding="async">`;
  return `<div class="gal-w"><div class="gal" dir="ltr">${l.map(u=>`<img class="c-img" src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('')}</div><span class="gal-n tnum">1/${l.length}</span><button type="button" class="gal-b prev-b" data-act="gal" data-d="-1" aria-label="‹">‹</button><button type="button" class="gal-b next-b" data-act="gal" data-d="1" aria-label="›">›</button></div>`}
 document.addEventListener('scroll',e=>{const g=e.target;if(!g.classList||!g.classList.contains('gal'))return;const n=g.children.length,k=Math.min(n,Math.round(g.scrollLeft/Math.max(1,g.clientWidth))+1),c=g.parentNode.querySelector('.gal-n');if(c)c.textContent=k+'/'+n},true);
@@ -1806,8 +1813,13 @@ document.addEventListener('submit',async e=>{
   if(pub&&!f.elements.agree.checked){f.elements.agree.focus();return}
   const base={factory:fac,fac:myHandle(),price,shipping:ship,cur,options:parseOpts(f.opts.value),gift:giftOn?{code:genGift(),freeShip:f.elements.giftShip.checked,used:false}:null,mode:giftOn?'gift':'notify',msg:m||{ar:L.ar.msgPh,en:L.en.msgPh,zh:L.zh.msgPh,tr:L.tr.msgPh}};
   /* Live: listing for sale is saved by the database (price in EUR cents); the screens refresh from it */
-  if(LIVE&&pub){const b=f.querySelector('button.pri');b.disabled=true;
-   try{await rest('POST','rpc/save_listing',{p_idea:p.id,p_price_cents:Math.round(pIn*100),p_shipping_cents:Math.round(sIn*100),p_handling:Math.min(3,Math.max(1,parseInt(f.elements.handling.value,10)||3)),p_options:f.opts.value||'',p_message:m||''});
+  if(LIVE&&pub){const b=f.querySelector('button.pri'),files=[...((f.elements.ph||{}).files||[])],perr=$('#mk-ph-err');
+   if(files.length>6){if(perr){perr.textContent=T('prodPhMax');perr.hidden=false}return}
+   b.disabled=true;let imgs=null;
+   try{/* the factory's own product photos go into its own folder; no new photos = keep the ones it has */
+    if(files.length){imgs=[];const tag='lst-'+p.id.slice(0,8)+'-'+Date.now().toString(36);for(const [k,file] of files.entries())imgs.push(await uploadImg(tag,await readImg(file,1600,.82),k))}
+    await rest('POST','rpc/save_listing',{p_idea:p.id,p_price_cents:Math.round(pIn*100),p_shipping_cents:Math.round(sIn*100),p_handling:Math.min(3,Math.max(1,parseInt(f.elements.handling.value,10)||3)),p_options:f.opts.value||'',p_message:m||'',...(imgs?{p_images:imgs}:{})});
+    if(imgs){const old=((p.offers||[]).find(o=>o.fac===myHandle())||{}).imgs||[],pf=imgPrefixes(old);if(pf.length)fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:pf})}).catch(()=>{})}
     closeModal();toast(T('publicDone'));await liveRefresh()}catch(x){b.disabled=false;dbFail(x)}
    return}
   if(pub){
@@ -2000,7 +2012,9 @@ function fetchSimilar(title,desc){if(!LIVE)return Promise.resolve();
  const pat=x=>'*'+x.replace(/[اأإآ]/g,'_').replace(/[هة]/g,'_').replace(/[يى]/g,'_')+'*';
  const or=w.flatMap(x=>[`title.ilike.${pat(x)}`,`description.ilike.${pat(x)}`]).join(',');
  return simReq=rest('GET',`ideas?select=${IDEA_COLS}&or=(${encodeURIComponent(or)})&order=yes_count.desc&limit=60`).then(async r=>{await mergeRows(r);applyFac()}).catch(e=>console.warn('tamanna similar',e)).finally(()=>{simReq=null})}
-async function liveRefresh(){try{await liveLoad();if(!UI.editing&&!UI.composeOpen)render();else updateBadges();if(location.hash.startsWith('#idea-')&&$('#modal').hidden)route()}catch(e){console.warn('tamanna load',e);if(!S.ideas.length)toast(T('netErr'))}}
+async function liveRefresh(){try{await liveLoad();if(!UI.editing&&!UI.composeOpen)render();else updateBadges();if(location.hash.startsWith('#idea-')&&$('#modal').hidden)route();
+ /* an idea opened before the data finished loading: redraw it in place (keeps the scroll position) */
+ else if(UI.modal==='idea'&&!UI.editing&&location.hash.startsWith('#idea-')){const i=byId(location.hash.slice(6)),sh=$('.sheet');if(i&&sh){const st=sh.scrollTop;$('#mc').innerHTML=ideaHTML(i);sh.scrollTop=st}}}catch(e){console.warn('tamanna load',e);if(!S.ideas.length)toast(T('netErr'))}}
 /* Image: already shrunk to ≤900px JPEG in the browser; stored under the poster's own folder, then linked to the idea */
 async function uploadImg(id,dataUrl,k){const at=await token(),blob=await (await fetch(dataUrl)).blob(),path=`${sess.uid}/${id}${k===undefined?'':'-'+k}.jpg`;
  const r=await fetch(`${SB.url}/storage/v1/object/idea-images/${path}`,{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+at,'Content-Type':'image/jpeg'},body:blob});
@@ -2028,7 +2042,7 @@ const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).pus
 let FACDATA=null;
 async function liveLoadFac(){
  const [facs,makes,notes,lists,revs]=await Promise.all([restAll('factories?select=handle,name,country,website&order=handle'),restAll('makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc,id.asc'),restAll('factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&order=idea_id,handle'),
-  restAll('listings?select=id,idea_id,handle,factory_name,price_cents,shipping_cents,handling_days,options,message,created_at&active=eq.true&order=created_at,id').catch(()=>[]),
+  restAll('listings?select=id,idea_id,handle,factory_name,price_cents,shipping_cents,handling_days,options,message,created_at,images&active=eq.true&order=created_at,id').catch(()=>[]),
   restAll('reviews?select=id,listing_id,idea_id,handle,factory_name,author_name,rating,body,images,created_at,updated_at&order=created_at.desc,id').catch(()=>[])]);
  FACTORIES.length=0;(facs||[]).forEach(f=>FACTORIES.push([f.handle,f.name]));
  let det=[],invs=[],thr=[],msgs=[];FAC=null;
@@ -2040,7 +2054,7 @@ async function liveLoadFac(){
  FACDATA={det,makes,notes,invs,thr,msgs,lists,revs};applyFac()}
 /* A live listing becomes an "offer" in the shapes the selling screens already use. Prices are stored in EUR cents;
    the screens keep prices in USD and convert to each visitor's currency, so EUR is turned into USD here. eur/eurShip keep the exact charge. */
-const listingOffer=l=>({id:l.id,live:true,fac:l.handle,factory:l.factory_name,price:l.price_cents/100/FX.EUR,shipping:l.shipping_cents/100/FX.EUR,cur:'EUR',eur:l.price_cents,eurShip:l.shipping_cents,handling:l.handling_days,options:parseOpts(l.options),msg:l.message||'',active:true,mode:'notify',at:Date.parse(l.created_at)});
+const listingOffer=l=>({id:l.id,live:true,fac:l.handle,factory:l.factory_name,price:l.price_cents/100/FX.EUR,shipping:l.shipping_cents/100/FX.EUR,cur:'EUR',eur:l.price_cents,eurShip:l.shipping_cents,handling:l.handling_days,options:parseOpts(l.options),msg:l.message||'',active:true,mode:'notify',at:Date.parse(l.created_at),imgs:l.images||[]});
 function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs,lists,revs}=FACDATA;
  const RV=grp(revs,'idea_id'),D=new Map((det||[]).map(d=>[d.id,d])),M=grp((makes||[]).filter(m=>m.kind!=='platform'),'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id'),LS=grp(lists,'idea_id');
  S.me.facPriv=[];S.me.facPub=[];
@@ -2356,6 +2370,10 @@ document.addEventListener('submit',async e=>{const f=e.target;if(f.dataset.form!
   if(f.nm.value.trim())S.me.name=f.nm.value.trim();toast(T('revSaved'));await refreshReviews();$('#mc').innerHTML=await purchHTML()}
  catch(x){const m=x.message||'';if(added.length){const p=imgPrefixes(added);fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:p})}).catch(()=>{})}
   bad(/reserved_name/.test(m)?T('nameReserved'):/not_allowed/.test(m)?T('revNotYet'):T('netErr'));btn.disabled=false;btn.textContent=T('revSave')}});
+Object.assign(L.ar,{prodPh:'صور المنتج من عندك (اختياري، حتى 6)',prodPhNote:'صور احترافية للمنتج بعد التنفيذ. تظهر للناس فوق صور الفكرة.',prodPhKeep:'إذا ما اخترت صوراً جديدة تبقى صورك الحالية:',prodPhMax:'حتى 6 صور فقط.',prodPhBy:f=>`صور المنتج الفعلي من ${f}`});
+Object.assign(L.en,{prodPh:'Your product photos (optional, up to 6)',prodPhNote:'Professional photos of the finished product. Shown above the idea’s pictures.',prodPhKeep:'If you don’t pick new photos, your current ones stay:',prodPhMax:'Up to 6 photos only.',prodPhBy:f=>`Real product photos by ${f}`});
+Object.assign(L.zh,{prodPh:'你的产品照片(可选,最多 6 张)',prodPhNote:'成品的专业照片,显示在创意图片上方。',prodPhKeep:'如果不选新照片,将保留现有照片:',prodPhMax:'最多 6 张照片。',prodPhBy:f=>`${f} 拍摄的实物照片`});
+Object.assign(L.tr,{prodPh:'Ürün fotoğrafların (isteğe bağlı, en fazla 6)',prodPhNote:'Bitmiş ürünün profesyonel fotoğrafları. Fikrin görsellerinin üstünde görünür.',prodPhKeep:'Yeni fotoğraf seçmezsen mevcutlar kalır:',prodPhMax:'En fazla 6 fotoğraf.',prodPhBy:f=>`${f} tarafından gerçek ürün fotoğrafları`});
 Object.assign(L.ar,{revT:'تقييمات المشترين',revNote:'كل تقييم يخص تصنيع هذا المصنع لهذا المنتج فقط، وليس المصنع في كل منتجاته.',revBtn:'قيّم المنتج',revEdit:'تعديل مراجعتك',revYours:'تقييمك',revFor:f=>`تقييمك يخص تصنيع «${f}» لهذا المنتج فقط. صوّر المنتج عندك عشان يشوفه اللي بعدك.`,revStars:'كم نجمة تعطي التصنيع؟',revName:'اسمك الظاهر',revBody:'مراجعتك',revBodyPh:'كيف الجودة؟ هل طابق الوصف والصور؟ كيف التغليف والشحن؟',revPh:'صور المنتج عندك (حتى 4)',revPhKeep:'إذا ما اخترت صوراً جديدة تبقى صورك السابقة:',revSave:'نشر المراجعة',revBack:'رجوع',revDel:'حذف المراجعة',revNeedStar:'اختر عدد النجوم.',revNeedBody:'اكتب مراجعة من 5 أحرف على الأقل.',revMax4:'حتى 4 صور فقط.',revSaved:'نُشرت مراجعتك، شكراً!',revDeleted:'حُذفت مراجعتك.',revNotYet:'تقدر تقيّم المنتج بعد شحنه.',revN:n=>`${n} تقييم`});
 Object.assign(L.en,{revT:'Buyer reviews',revNote:'Each review rates this factory’s making of this product only, not the factory across all its products.',revBtn:'Review the product',revEdit:'Edit your review',revYours:'Your rating',revFor:f=>`Your review rates “${f}” making this product only. Add photos of what you received for the next buyers.`,revStars:'How many stars for the making?',revName:'Name shown',revBody:'Your review',revBodyPh:'How is the quality? Does it match the description and photos? Packaging and shipping?',revPh:'Photos of your product (up to 4)',revPhKeep:'If you don’t pick new photos, your previous ones stay:',revSave:'Post review',revBack:'Back',revDel:'Delete review',revNeedStar:'Pick a number of stars.',revNeedBody:'Write at least 5 characters.',revMax4:'Up to 4 photos only.',revSaved:'Your review is posted, thank you!',revDeleted:'Your review was deleted.',revNotYet:'You can review the product once it ships.',revN:n=>`${n} ${n==='1'?'review':'reviews'}`});
 Object.assign(L.zh,{revT:'买家评价',revNote:'每条评价只针对该工厂制作的这款产品,而不是工厂的所有产品。',revBtn:'评价产品',revEdit:'修改评价',revYours:'你的评分',revFor:f=>`你的评价只针对「${f}」制作的这款产品。拍下收到的产品给后来的买家看。`,revStars:'为制作质量打几颗星?',revName:'显示名称',revBody:'你的评价',revBodyPh:'质量如何?与描述和图片一致吗?包装和物流怎样?',revPh:'产品照片(最多 4 张)',revPhKeep:'如果不选新照片,将保留之前的照片:',revSave:'发布评价',revBack:'返回',revDel:'删除评价',revNeedStar:'请选择星级。',revNeedBody:'请至少写 5 个字。',revMax4:'最多 4 张照片。',revSaved:'评价已发布,谢谢!',revDeleted:'评价已删除。',revNotYet:'产品发货后才能评价。',revN:n=>`${n} 条评价`});
