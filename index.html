@@ -342,6 +342,10 @@ body.live .giftf,body.live .fld:has(#mk-c),body.live .fld:has(#mk-f),body.live d
 .seg{display:inline-flex;background:var(--surface-2);border-radius:11px;padding:3px}
 .seg button{padding:7px 13px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--muted)}
 .wl-tabs{display:flex;margin-block:10px 4px}.wl-tabs button{flex:1}
+/* Labelled example products */
+.chip.demo{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip.demo{background:#422006;color:#FDE68A;border-color:#92400E}}
+:root[data-theme="dark"] .chip.demo{background:#422006;color:#FDE68A;border-color:#92400E}
 /* Factory photos of the made product */
 .prod-ph{display:flex;flex-direction:column;gap:6px;margin-block:6px}
 .prod-ph-l{align-self:flex-start;font-size:12.5px;font-weight:700;color:var(--verify-ink,#0E7C66);background:var(--verify-soft,#E6F6F1);border-radius:999px;padding:3px 10px}
@@ -1108,7 +1112,12 @@ const remTxt=ms=>ms<DAY?T('remH')(fmt(Math.max(1,Math.ceil(ms/36e5)))):T('remD')
 const wishIds=()=>Object.keys(S.me.votes).filter(k=>S.me.votes[k]==='yes'&&byId(k));
 /* ideas I liked but haven't added to my wishlist yet */
 const likedIds=()=>Object.keys(S.me.reacts).filter(k=>S.me.reacts[k]===1&&S.me.votes[k]!=='yes'&&byId(k));
-const unseenAvail=()=>wishIds().filter(k=>isPublic(byId(k))&&!S.me.seenAvail.includes(k)).length;
+/* "available now" only for products you can really buy (never for the labelled examples) */
+const canBuyNow=i=>!!i&&isPublic(i)&&!liveOffers(i).every(o=>o.demo);
+const unseenAvail=()=>wishIds().filter(k=>canBuyNow(byId(k))&&!S.me.seenAvail.includes(k)).length;
+function demoBuyHTML(i){return `<h2>🧪 ${T('demoBuyT')}</h2><p class="muted">${esc(tx(i.title))}</p><p style="line-height:1.8">${T('demoBuyP')}</p>
+ <ol class="story-l"><li>${T('demoS1')}</li><li>${T('demoS2')}</li><li>${T('demoS3')}</li><li>${T('demoS4')}</li></ol>
+ <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn pri" data-act="compose-open">💡 ${T('demoPost')}</button><button class="btn" data-act="modal-close">${T('gotIt')}</button></div>`}
 
 /* ---------- chrome ---------- */
 function renderChrome(){
@@ -1130,6 +1139,7 @@ function updateBadges(){const ib=inboxUnread();document.querySelectorAll('[data-
 /* Outside-made claims: the creator sees the factory's proof link and can report a fake claim, which reopens the idea. */
 function proofHTML(i){const p=i.product,ok=p&&p.proof&&/^https?:\/\/\S+\.\S+/i.test(p.proof);return `${ok?`<a class="link" href="${esc(p.proof)}" target="_blank" rel="noopener noreferrer nofollow">${T('viewProof')}</a>`:''}<button class="link" style="color:var(--dislike);font-size:13px" data-act="report-fake">${T('reportL')}</button>`}
 function sideHTML(i,own){
+ if(isPublic(i)&&!canBuyNow(i)){const p=i.product;return `<span class="chip demo" style="align-self:flex-start">🧪 ${T('demoL')}</span><button class="buy" data-act="buy">${I.cart}<span>${T('demoTry')}</span></button><span class="price tnum">${money(p.price)}<small>+ ${money(p.shipping)} ${T('ship')}</small></span><span class="fac-name">${esc(p.factory)} · ${T('shipsIn')(offerDays(p))}</span>${p.revN?`<button class="fac-name link" data-act="reviews">${starsAvg(p.revAvg,p.revN)}</button>`:''}`}
  if(isPublic(i)){const p=i.product,d=discOf(i);return `<button class="badge ver" data-act="story" title="${T('storyHint')}">${I.mark}<span>${T('verified')}</span>${I.open}</button>${d?`<button class="badge disc" data-act="buy">${I.tag}<span>${T('discBadge')(d.pct)} <small>· ${T('discUntil')(F().d.format(d.until))}</small></span></button>`:''}<button class="buy" data-act="buy">${I.cart}<span>${T('manufactured')}</span></button>${own&&giftOff(i)?`<button class="buy gift" data-act="buy" data-gift="1">${I.gift}<span>${T('useGift')}</span></button>`:''}<span class="price tnum">${money(p.price)}<small>+ ${money(p.shipping)} ${T('ship')}</small></span><span class="fac-name">${facLink(p.fac,p.factory)} · ${T('shipsIn')(offerDays(p))}</span>${p.revN?`<button class="fac-name link" data-act="reviews" title="${T('revNote')}">${starsAvg(p.revAvg,p.revN)}</button>`:''}${liveOffers(i).length>1?`<span class="fac-name">${T('moreSellers')(fmt(liveOffers(i).length-1))}</span>`:''}`}
  if(i.status==='private'&&own){const p=i.product;return `<span class="only-you">${T('onlyYou')}</span><span class="badge priv">${I.factory}${T('privateBadge')}</span><span class="note">${(T('privDetail')||{})[p.mode==='gift'?'gift':'notify']}</span><span class="note muted">“${esc(tx(p.msg))}”</span><span class="fac-name">${esc(p.factory)}</span>${proofHTML(i)}${p.gift&&!p.gift.used?`<button class="buy gift" data-act="buy" data-gift="1">${I.gift}<span>${T('useGift')}</span></button>`:''}`}
  return `<span class="badge open">${i.status==='private'?T('outsidePub'):T('openStatus')}</span><span class="stat-mini"><b class="tnum">${fmt(yesN(i))}</b> ${T('wishers')}</span>`;
@@ -1191,9 +1201,9 @@ function cardHTML(i){
  const own=isOwner(i),v=vote(i),r=react(i),y=yesN(i),tot=y+noN(i),pct=tot?Math.round(y*100/tot):0;
  const title=esc(tx(i.title)),desc=esc(tx(i.desc)),long=tx(i.desc).length>170,ex=UI.expanded.has(i.id),editing=UI.editing===i.id,openC=UI.openC.has(i.id);
  const main=editing&&(!own||isMade(i))?(own?addFormHTML(i):fnoteFormHTML(i)):editing?`<form class="edit" data-form="edit"><label class="fld">${T('fTitle')}<input name="title" id="e-t-${i.id}" value="${title}" required minlength="4" maxlength="90"></label><label class="fld">${T('fDesc')}<textarea name="desc" id="e-d-${i.id}" rows="5" required>${desc}</textarea></label><div class="row"><button class="btn pri sm">${T('save')}</button><button type="button" class="btn ghost sm" data-act="edit-cancel">${T('cancel')}</button>${own&&!isMade(i)?`<button type="button" class="btn danger sm" style="margin-inline-start:auto" data-act="del-idea">${T('delIdea')}</button>`:''}</div>${isMade(i)?`<p class="muted" style="font-size:12.5px;line-height:1.6">${T(own?'revWarn':'propWarn')}</p>`:''}</form>`
-  :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${prodPhotosHTML(i)}${galHTML(imgsOf(i))}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
+  :`<h3 class="c-title"><a href="#idea-${i.id}">${title}</a></h3>${prodPhotosHTML(i)}${galHTML(imgsOf(i).filter(u=>!prodImgs(i).includes(u)))}<p class="c-desc${long&&!ex?' clamp':''}">${desc}</p>${long?`<button class="more" data-act="expand" aria-expanded="${ex}">${ex?T('readLess'):T('readMore')} ${ex?'▴':'▾'}</button>`:''}${addsHTML(i)}${revHTML(i)}${fnoteHTML(i)}${simNoteHTML(i)}${trHTML('i_'+i.id)}`;
  return `<article class="card" data-id="${i.id}">
- <div class="c-main"><div class="c-meta"><span class="av">${i.author?esc(i.author[0].toUpperCase()):'?'}</span><b>${whoHTML(i)}</b><span>·</span><time>${ago(i.created)}</time>${i.edited?`<span>· ${T('edited')}</span>`:''}${own?`<span class="chip mine">${T('mine')}</span>`:''}</div>${main}</div>
+ <div class="c-main"><div class="c-meta"><span class="av">${i.author?esc(i.author[0].toUpperCase()):'?'}</span><b>${whoHTML(i)}</b><span>·</span><time>${ago(i.created)}</time>${i.edited?`<span>· ${T('edited')}</span>`:''}${own?`<span class="chip mine">${T('mine')}</span>`:''}${i.demo?`<span class="chip demo" title="${T('demoHow')}">🧪 ${T('demoL')}</span>`:''}</div>${main}</div>
  <aside class="c-side">${sideHTML(i,own)}</aside>
  <div class="poll${v?' voted':''}"><p class="poll-q">${T('poll')}</p>${v?`<div class="res"><div class="bar"><i style="width:${pct}%"></i></div><div class="res-t tnum"><b>${pct}%</b> ${T('wishPct')} · ${fmt(tot)} ${T('votes')}</div></div>`:''}<div class="poll-btns"><button class="pb y${v==='yes'?' sel':''}" data-act="vote" data-v="yes" aria-pressed="${v==='yes'}">${I.star}${T('yes')}</button><button class="pb n${v==='no'?' sel':''}" data-act="vote" data-v="no" aria-pressed="${v==='no'}">${T('no')}</button></div></div>
  <div class="c-actions"><button class="ab like${r===1?' on':''}" data-act="react" data-v="1" aria-pressed="${r===1}" aria-label="${T('like')}">${I.up}<span class="tnum">${fmt(likeN(i))}</span></button><button class="ab dis${r===-1?' on':''}" data-act="react" data-v="-1" aria-pressed="${r===-1}" aria-label="${T('dislike')}">${I.down}<span class="tnum">${fmt(disN(i))}</span></button><button class="ab" data-act="sug" aria-expanded="${openC}">${I.chat}<span>${T('suggestions')} (${fmt(own?visComments(i,own).length:pubCount(i))})</span>${own&&pendCount(i)?`<span class="badge-n">${fmt(pendCount(i))}</span>`:''}</button><button class="ab" data-act="share" aria-label="${T('share')}">${I.share}<span>${T('share')}</span></button>${canEdit(i)&&!editing?`<button class="ab edit" data-act="edit">${own?I.pen:'🏭'}<span>${T(!own?'fnBtn':isMade(i)?'addBtn':'edit')}</span></button>`:''}</div>
@@ -1310,12 +1320,12 @@ function renderWish(){
   ${l.length?`<div class="feed">${l.map(i=>`<div class="wish-item" data-id="${i.id}">${cardHTML(i)}</div>`).join('')}</div>`:`<div class="empty-box">👍<p>${T('likedEmpty')}</p><button class="btn pri" data-act="nav" data-v="feed">${T('browse')}</button></div>`}</div>`;
   return;
  }
- const ids=wishIds(),list=ids.map(byId).sort((a,b)=>(isPublic(b)-isPublic(a))||(yesN(b)-yesN(a)));
- const av=list.filter(isPublic).length,un=unseenAvail();
+ const ids=wishIds(),list=ids.map(byId).sort((a,b)=>(canBuyNow(b)-canBuyNow(a))||(yesN(b)-yesN(a)));
+ const av=list.filter(canBuyNow).length,un=unseenAvail();
  $('#view').innerHTML=`<div class="col"><div class="wl-h"><h2>${T('navWishL')}</h2>${tabs}<p class="muted tnum">${T('wlSub')(fmt(list.length),fmt(av))}</p></div>${acctBoxHTML()}${buyerOrdersHTML()}
  ${av?`<div class="avail">${I.bell}<span>${T('availNow')(fmt(av))}</span></div>`:''}
  ${list.length?`<div class="feed">${list.map(i=>`<div class="wish-item" data-id="${i.id}">${pledgeHTML(i)}${cardHTML(i)}</div>`).join('')}</div>`:`<div class="empty-box">${I.star}<p>${T('wishEmpty')}</p><button class="btn pri" data-act="nav" data-v="feed">${T('browse')}</button></div>`}</div>`;
- if(un){S.me.seenAvail=Array.from(new Set(S.me.seenAvail.concat(ids.filter(k=>isPublic(byId(k))))));save();setTimeout(updateBadges,1500)}
+ if(un){S.me.seenAvail=Array.from(new Set(S.me.seenAvail.concat(ids.filter(k=>canBuyNow(byId(k))))));save();setTimeout(updateBadges,1500)}
 }
 
 /* ---------- factory ---------- */
@@ -1497,7 +1507,7 @@ function invHTML(i){
  return `<div class="inv"><b>${I.factory}${T('invTitle')}</b><p class="muted" style="font-size:12.5px">${T('invNote')}</p>${inv.length?`<div class="chips">${inv.map(h=>`<span class="chip mine" dir="ltr"><button class="link" style="font-size:12px" data-act="fac" data-h="${esc(h)}">${esc(h)}</button><button data-act="inv-rm" data-h="${esc(h)}" aria-label="${T('invRemove')} ${esc(h)}">×</button></span>`).join('')}</div>`:''}${inv.length<3?`<p class="muted" style="font-size:12.5px">${T('dirHow')}</p><form class="sug-f" data-form="fac-find"><input class="inp" name="h" id="inv-${i.id}" placeholder="${T('invPh')}" dir="ltr" autocomplete="off" spellcheck="false" required aria-label="${T('invPh')}"><button class="btn sm">${T('openFac')}</button></form>`:`<p class="muted" style="font-size:12.5px">${T('invMax')}</p>`}<p class="err" id="inv-err-${i.id}" hidden></p></div>`;
 }
 const facName=h=>{const f=FACTORIES.find(x=>x[0]===h);return f?f[1]:h};
-const facLink=(h,name)=>h?`<button class="link fac-link" data-act="fac" data-h="${esc(h)}">${esc(name||facName(h))}</button>`:esc(name||'');
+const facLink=(h,name)=>h&&h!=='@demo'?`<button class="link fac-link" data-act="fac" data-h="${esc(h)}">${esc(name||facName(h))}</button>`:esc(name||'');
 function facProfileHTML(h){
  const name=facName(h),prods=S.ideas.filter(i=>(i.offers||[]).some(o=>o.fac===h&&o.active)),r=relOf(h),mine=S.ideas.filter(i=>isOwner(i)&&i.status==='open');
  return `<div class="story-h"><span class="av" style="width:48px;height:48px;font-size:20px">${esc(name[0])}</span><div><h2>${esc(name)}</h2><p class="muted" dir="ltr">${esc(h)}</p></div></div>
@@ -1646,8 +1656,9 @@ function fly(r){
 const MAX_IMGS=6;
 const imgsOf=i=>i.imgs&&i.imgs.length?i.imgs:(i.img?[i.img]:[]);
 /* Real photos the selling factory took of the made product, shown above the idea's own pictures */
-function prodPhotosHTML(i){const p=isPublic(i)&&i.product,l=p&&p.imgs||[];if(!l.length)return '';
- return `<div class="prod-ph"><span class="prod-ph-l">📸 ${T('prodPhBy')(esc(p.factory))}</span>${galHTML(l)}</div>`}
+const prodImgs=i=>{const p=isPublic(i)&&i.product;return p&&p.imgs||[]};
+function prodPhotosHTML(i){const p=i.product,l=prodImgs(i);if(!l.length)return '';
+ return `<div class="prod-ph"><span class="prod-ph-l">${p.demo?`🧪 ${T('demoL')}`:`📸 ${T('prodPhBy')(esc(p.factory))}`}</span>${galHTML(l)}</div>`}
 function galHTML(l){if(!l.length)return '';if(l.length===1)return `<img class="c-img" src="${esc(l[0])}" alt="" loading="lazy" decoding="async">`;
  return `<div class="gal-w"><div class="gal" dir="ltr">${l.map(u=>`<img class="c-img" src="${esc(u)}" alt="" loading="lazy" decoding="async">`).join('')}</div><span class="gal-n tnum">1/${l.length}</span><button type="button" class="gal-b prev-b" data-act="gal" data-d="-1" aria-label="‹">‹</button><button type="button" class="gal-b next-b" data-act="gal" data-d="1" aria-label="›">›</button></div>`}
 document.addEventListener('scroll',e=>{const g=e.target;if(!g.classList||!g.classList.contains('gal'))return;const n=g.children.length,k=Math.min(n,Math.round(g.scrollLeft/Math.max(1,g.clientWidth))+1),c=g.parentNode.querySelector('.gal-n');if(c)c.textContent=k+'/'+n},true);
@@ -1690,7 +1701,7 @@ document.addEventListener('click',async e=>{
  case 'hero-peek':UI.heroPeek=true;repaintHero();clearTimeout(UI.peekT);UI.peekT=setTimeout(endPeek,RM.matches?4000:6800);break;
  case 'hero-show':closeModal();UI.heroCollapsed=false;go('feed');break;
  case 'how':openModal(howHTML(el.dataset.fac==='1'),'how');$('.sheet').scrollTop=0;break;
- case 'compose-open':openCompose();break;
+ case 'compose-open':if(UI.modal==='demo')closeModal();openCompose();break;
  case 'compose-hide':UI.composeOpen=false;renderView();break;
  case 'compose-cancel':UI.composeOpen=false;UI.draft={title:'',desc:'',img:'',anon:UI.draft.anon};renderView();break;
  case 'img-clear':{const l=UI.draft.imgs||[];l.splice(+el.dataset.k||0,1);UI.draft.imgs=l;UI.draft.img=l[0]||'';renderView();break}
@@ -1717,7 +1728,7 @@ document.addEventListener('click',async e=>{
   UI.delArm=null;UI.editing=null;S.ideas=S.ideas.filter(x=>x.id!==id);if(LIVE)dbDel(id);S.me.claimed=S.me.claimed.filter(x=>x!==id);UI.openC.delete(id);UI.expanded.delete(id);
   save();if(location.hash==='#idea-'+id)closeModal();renderView();updateBadges();toast(T('delDone'));break}
  case 'story':{const t=i||byId(el.dataset.pid);if(t&&isPublic(t))openModal(storyHTML(t),'story');break}
- case 'buy':{const t=i||byId(el.dataset.pid);if(!t)break;const live=liveOffers(t);let off=null;
+ case 'buy':{const t=i||byId(el.dataset.pid);if(!t)break;if(t.demo&&liveOffers(t).every(o=>o.demo)){openModal(demoBuyHTML(t),'demo');break}const live=liveOffers(t);let off=null;
   if(el.dataset.gift){off=giftOff(t);if(!off||!isOwner(t))break}
   else{if(!live.length)break;if(el.dataset.ex)off=live.find(o=>o.id!==el.dataset.ex)||null}
   UI.qty=1;UI.eff=null;UI.offerId=off?off.id:null;openModal(buyHTML(t),'buy');if(off&&el.dataset.gift){$('#codeIn').value=off.gift.code;applyCode(t)}else updTotals(t);break}
@@ -1937,7 +1948,7 @@ async function rest(method,path,body,prefer){const h={apikey:SB.key,'Content-Typ
  if(!r.ok){const e=new Error((j&&(j.message||j.msg))||('http '+r.status));e.status=r.status;throw e}return j}
 const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):/reserved_name/.test(m)?T('nameReserved'):T('netErr'))}
-const IDEA_COLS='id,author_name,official,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at,similar_to,diff,sink,mod_ok';
+const IDEA_COLS='id,author_name,official,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at,similar_to,diff,sink,mod_ok,demo';
 let liveAt=0;
 /* Ideas load page by page, so the site never stops at a fixed number of ideas.
    Each list (new / most wished / made) is read from the database in its own order; S.ideas is the cache of everything
@@ -1963,7 +1974,7 @@ async function mergeRows(rows,withSugs=true){
   const i=Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,official:!!r.official,madeTs:r.made_at?Date.parse(r.made_at):0,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
    created:Date.parse(r.created_at),yes:r.yes_count-(v==='yes'?1:0),no:r.no_count-(v==='no'?1:0),likes:r.like_count-(rc===1?1:0),dislikes:r.dislike_count-(rc===-1?1:0),w7:o.w7||0,
    comments:sg?sg.map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})):(o.comments||[]),
-   history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:r.similar_to?[r.similar_to]:(o.similarTo||[]),diff:r.diff||o.diff||'',rises:RISEMAP[r.id]||[],modOk:!!r.mod_ok});
+   history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:r.similar_to?[r.similar_to]:(o.similarTo||[]),diff:r.diff||o.diff||'',rises:RISEMAP[r.id]||[],modOk:!!r.mod_ok,demo:r.demo||null});
   if(!had)S.ideas.push(i);out.push(i)});
  /* The older idea each one links to must be loaded too, so its link shows */
  const need=[...new Set(rows.map(r=>r.similar_to).filter(x=>x&&!byId(x)))];
@@ -2064,6 +2075,10 @@ function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs,list
   i.priv=ms.length?ms[ms.length-1]:null;i.outside=ms.slice(0,-1);i.offers=(LS[i.id]||[]).map(listingOffer);
   /* buyer reviews: each one rates this factory making this product (its listing), never the factory as a whole */
   i.reviews=(RV[i.id]||[]).map(r=>({id:r.id,listing:r.listing_id,fac:r.handle,factory:r.factory_name,name:r.author_name,rating:r.rating,text:r.body,imgs:r.images||[],at:Date.parse(r.created_at),edited:r.updated_at!==r.created_at}));
+  /* example product (clearly labelled): its seller, photos and reviews come from ideas.demo; it can't be bought */
+  if(i.demo&&!i.offers.length){const d=i.demo,oid='demo-'+i.id;
+   i.offers=[{id:oid,live:true,demo:true,fac:'@demo',factory:d.factory,price:d.price_cents/100/FX.EUR,shipping:d.shipping_cents/100/FX.EUR,cur:'EUR',eur:d.price_cents,eurShip:d.shipping_cents,handling:d.handling||2,options:[],msg:'',active:true,mode:'notify',at:i.madeTs,imgs:d.images||[]}];
+   i.reviews=i.reviews.concat((d.reviews||[]).map((r,k)=>({id:oid+'-'+k,listing:oid,fac:'@demo',factory:d.factory,name:r.name,rating:r.rating,text:r.text,imgs:[],at:Date.now()-(r.days||1)*864e5,edited:false,demo:true})))}
   i.offers.forEach(o=>{const rs=i.reviews.filter(r=>r.listing===o.id);o.revN=rs.length;o.revAvg=rs.length?rs.reduce((s,r)=>s+r.rating,0)/rs.length:0});
   if(FAC&&i.offers.some(o=>o.fac===FAC.handle))S.me.facPub.push(i.id);
   if(FAC&&ms.some(m=>m.fac===FAC.handle))S.me.facPriv.push(i.id);
@@ -2344,7 +2359,7 @@ const starsRow=n=>`<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<sp
 const starsAvg=(a,n)=>`<span class="stars">★</span> <b class="tnum">${new Intl.NumberFormat(LOC[S.me.lang]||'en-US',{minimumFractionDigits:1,maximumFractionDigits:1}).format(a)}</b> <span class="muted tnum">(${T('revN')(fmt(n))})</span>`;
 function reviewsHTML(i){const rs=i.reviews||[];if(!rs.length)return '';
  const groups=[];rs.forEach(r=>{const k=r.listing||r.fac;let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,factory:r.factory,l:[]});g.l.push(r)});
- return `<section class="revs" id="revs"><h3>⭐ ${T('revT')}</h3><p class="muted" style="font-size:13px">${T('revNote')}</p>${groups.map(g=>{const a=g.l.reduce((s,r)=>s+r.rating,0)/g.l.length;return `<div class="rev-g"><div class="rev-gh"><b><bdi>${esc(g.factory)}</bdi></b><span>${starsAvg(a,g.l.length)}</span></div>
+ return `<section class="revs" id="revs"><h3>⭐ ${T('revT')}${i.demo?` <span class="chip demo">🧪 ${T('demoL')}</span>`:''}</h3><p class="muted" style="font-size:13px">${i.demo?T('demoRev'):T('revNote')}</p>${groups.map(g=>{const a=g.l.reduce((s,r)=>s+r.rating,0)/g.l.length;return `<div class="rev-g"><div class="rev-gh"><b><bdi>${esc(g.factory)}</bdi></b><span>${starsAvg(a,g.l.length)}</span></div>
  ${g.l.map(r=>`<article class="rev"><div class="rev-h">${starsRow(r.rating)}<b><bdi>${esc(r.name)}</bdi></b><small class="muted">${ago(r.at)}${r.edited?' · '+T('edited'):''}</small></div><p class="rev-t">${esc(r.text)}</p>${r.imgs.length?`<div class="rev-imgs">${r.imgs.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`:''}</article>`).join('')}</div>`}).join('')}</section>`}
 function revFormHTML(o){const it=o.item,rv=o.review||{},st=[5,4,3,2,1].map(n=>`<input type="radio" name="st" value="${n}" id="st-${n}"${rv.rating===n?' checked':''}><label for="st-${n}" title="${n}/5">★</label>`).join('');
  return `<h2>⭐ ${T('revBtn')}</h2><p class="muted">${esc(it.title||'')} · ${esc(it.factory||'')}</p><p class="pledge-stat">${T('revFor')(esc(it.factory||''))}</p>
@@ -2370,6 +2385,10 @@ document.addEventListener('submit',async e=>{const f=e.target;if(f.dataset.form!
   if(f.nm.value.trim())S.me.name=f.nm.value.trim();toast(T('revSaved'));await refreshReviews();$('#mc').innerHTML=await purchHTML()}
  catch(x){const m=x.message||'';if(added.length){const p=imgPrefixes(added);fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:p})}).catch(()=>{})}
   bad(/reserved_name/.test(m)?T('nameReserved'):/not_allowed/.test(m)?T('revNotYet'):T('netErr'));btn.disabled=false;btn.textContent=T('revSave')}});
+Object.assign(L.ar,{demoL:'مثال توضيحي',demoHow:'منتج مثال يوضح كيف تشتغل تمنّى، وليس للبيع.',demoRev:'تقييمات توضيحية لهذا المثال، تبين كيف يقيّم المشترون المنتجات الحقيقية.',demoBuyT:'هذا مثال توضيحي',demoBuyP:'هذا المنتج مثال يوضح كيف تشتغل تمنّى، وليس للبيع. المنتجات الحقيقية تظهر هنا بنفس الشكل لما يصنعها مصنع، وتقدر تشتريها مباشرة.',demoS1:'💡 شخص ينشر فكرة منتج يتمناه.',demoS2:'⭐ الناس يضغطون «نعم، أتمنى» والفكرة تكبر.',demoS3:'🏭 مصنع يصنعها ويعرضها هنا بصوره وسعره.',demoS4:'🛍️ كل اللي تمنّوها يوصلهم تنبيه ويقدرون يشترونها.',demoPost:'اكتب فكرتك',demoTry:'جرّب كيف يتم الشراء'});
+Object.assign(L.en,{demoL:'Example',demoHow:'An example product showing how Tamanna works. Not for sale.',demoRev:'Example reviews for this demo, showing how buyers rate real products.',demoBuyT:'This is an example',demoBuyP:'This product is an example showing how Tamanna works; it isn’t for sale. Real products appear here the same way once a factory makes them, and you can buy them right away.',demoS1:'💡 Someone posts a product they wish existed.',demoS2:'⭐ People tap “Yes, I wish” and the idea grows.',demoS3:'🏭 A factory makes it and lists it here with photos and a price.',demoS4:'🛍️ Everyone who wished for it is notified and can buy it.',demoPost:'Post your idea',demoTry:'See how buying works'});
+Object.assign(L.zh,{demoL:'示例',demoHow:'展示 Tamanna 如何运作的示例产品,不出售。',demoRev:'此示例的演示评价,展示买家如何评价真实产品。',demoBuyT:'这是一个示例',demoBuyP:'这个产品是展示 Tamanna 如何运作的示例,不出售。工厂生产真实产品后会以同样方式出现在这里,可以直接购买。',demoS1:'💡 有人发布一个希望存在的产品。',demoS2:'⭐ 大家点击“是,我希望”,创意越来越受关注。',demoS3:'🏭 工厂生产后在这里上架,附照片和价格。',demoS4:'🛍️ 所有希望过的人都会收到通知并可购买。',demoPost:'发布你的创意',demoTry:'看看如何购买'});
+Object.assign(L.tr,{demoL:'Örnek',demoHow:'Tamanna’nın nasıl çalıştığını gösteren örnek ürün. Satılık değildir.',demoRev:'Bu örnek için tanıtım yorumları; alıcıların gerçek ürünleri nasıl değerlendirdiğini gösterir.',demoBuyT:'Bu bir örnektir',demoBuyP:'Bu ürün Tamanna’nın nasıl çalıştığını gösteren bir örnektir, satılık değildir. Gerçek ürünler bir fabrika ürettiğinde burada aynı şekilde görünür ve hemen satın alınabilir.',demoS1:'💡 Biri var olmasını istediği bir ürünü paylaşır.',demoS2:'⭐ İnsanlar “Evet, isterdim”e basar ve fikir büyür.',demoS3:'🏭 Bir fabrika üretir ve fotoğraf ve fiyatla burada listeler.',demoS4:'🛍️ İsteyen herkese bildirim gider ve satın alabilir.',demoPost:'Fikrini paylaş',demoTry:'Satın almanın nasıl olduğunu gör'});
 Object.assign(L.ar,{prodPh:'صور المنتج من عندك (اختياري، حتى 6)',prodPhNote:'صور احترافية للمنتج بعد التنفيذ. تظهر للناس فوق صور الفكرة.',prodPhKeep:'إذا ما اخترت صوراً جديدة تبقى صورك الحالية:',prodPhMax:'حتى 6 صور فقط.',prodPhBy:f=>`صور المنتج الفعلي من ${f}`});
 Object.assign(L.en,{prodPh:'Your product photos (optional, up to 6)',prodPhNote:'Professional photos of the finished product. Shown above the idea’s pictures.',prodPhKeep:'If you don’t pick new photos, your current ones stay:',prodPhMax:'Up to 6 photos only.',prodPhBy:f=>`Real product photos by ${f}`});
 Object.assign(L.zh,{prodPh:'你的产品照片(可选,最多 6 张)',prodPhNote:'成品的专业照片,显示在创意图片上方。',prodPhKeep:'如果不选新照片,将保留现有照片:',prodPhMax:'最多 6 张照片。',prodPhBy:f=>`${f} 拍摄的实物照片`});
