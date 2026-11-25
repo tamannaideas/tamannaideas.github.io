@@ -1219,12 +1219,16 @@ function composeHTML(){
    Every rise is temporary: newer products or rises push it down. Idea lists stay equal for everyone. */
 const isMadeIdea=i=>i.status&&i.status!=='open';
 const riseTs=i=>Math.max(i.madeTs||madeAt(i)||0,...(i.rises||[]).filter(t=>t<=Date.now()));
+/* People bury bad posts: with at least SINK_MIN dislikes and more dislikes than likes + wishes, an idea goes below
+   everything else in every list, and the more net dislikes the lower it goes (same rule as ideas.sink in the database) */
+const SINK_MIN=3,sinkOf=i=>{const d=disN(i),up=likeN(i)+yesN(i);return d>=SINK_MIN&&d>up?d-up:0};
+const sinkCmp=(a,b)=>sinkOf(a)-sinkOf(b);
 function sortedFeed(){let l=S.ideas.slice();const tab=UI.tab==='top'||UI.tab==='made'?UI.tab:'new';
- if(tab==='top')l=l.filter(i=>!isMadeIdea(i)).sort((a,b)=>yesN(b)-yesN(a));
- else if(tab==='made')l=l.filter(isMadeIdea).sort((a,b)=>riseTs(b)-riseTs(a));
- else l=l.sort((a,b)=>b.created-a.created);
+ if(tab==='top')l=l.filter(i=>!isMadeIdea(i)).sort((a,b)=>sinkCmp(a,b)||yesN(b)-yesN(a));
+ else if(tab==='made')l=l.filter(isMadeIdea).sort((a,b)=>sinkCmp(a,b)||riseTs(b)-riseTs(a));
+ else l=l.sort((a,b)=>sinkCmp(a,b)||b.created-a.created);
  /* Live: stop where this list's own pages stopped; ideas below that edge wait for their page */
- const p=LIVE&&PG[tab];if(p&&!p.done&&p.edge!==null)l=l.filter(i=>!i.live||pgKey[tab](i)>=p.edge);
+ const p=LIVE&&PG[tab];if(p&&!p.done&&p.edge!==null)l=l.filter(i=>{if(!i.live)return true;const s=sinkOf(i);return s<p.edge.s||(s===p.edge.s&&pgKey[tab](i)>=p.edge.k)});
  return l}
 const moreOnServer=()=>LIVE&&!PG[UI.tab==='top'||UI.tab==='made'?UI.tab:'new'].done;
 let io;
@@ -1907,7 +1911,7 @@ async function rest(method,path,body,prefer){const h={apikey:SB.key,'Content-Typ
  if(!r.ok){const e=new Error((j&&(j.message||j.msg))||('http '+r.status));e.status=r.status;throw e}return j}
 const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))].map(b=>b.toString(16).padStart(2,'0')).join('');
 function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):/reserved_name/.test(m)?T('nameReserved'):T('netErr'))}
-const IDEA_COLS='id,author_name,official,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at,similar_to,diff';
+const IDEA_COLS='id,author_name,official,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at,similar_to,diff,sink';
 let liveAt=0;
 /* Ideas load page by page, so the site never stops at a fixed number of ideas.
    Each list (new / most wished / made) is read from the database in its own order; S.ideas is the cache of everything
@@ -1915,7 +1919,7 @@ let liveAt=0;
    ideas down to the last row its own pages reached, so nothing appears out of order before its turn. */
 const PAGE=Math.min(200,Math.max(2,+new URLSearchParams(location.search).get('pg')||48)),IDS_CHUNK=80;/* ?pg=N only for testing paging */
 const PG={new:{n:0,done:false,edge:null},top:{n:0,done:false,edge:null},made:{n:0,done:false,edge:null}};
-const PG_Q={new:'order=created_at.desc,id.desc',top:'made_at=is.null&order=yes_count.desc,created_at.desc,id.desc',made:'made_at=not.is.null&order=made_at.desc,id.desc'};
+const PG_Q={new:'order=sink.asc,created_at.desc,id.desc',top:'made_at=is.null&order=sink.asc,yes_count.desc,created_at.desc,id.desc',made:'made_at=not.is.null&order=sink.asc,made_at.desc,id.desc'};
 const pgKey={new:i=>i.created,top:i=>yesN(i),made:i=>riseTs(i)};
 let STATS=null,RANKS={},mineSet=new Set(),RISEMAP={};
 const chunks=(a,n)=>{const o=[];for(let k=0;k<a.length;k+=n)o.push(a.slice(k,k+n));return o};
@@ -1940,7 +1944,7 @@ async function mergeRows(rows,withSugs=true){
  if(need.length)try{await mergeRows(await rowsByIds(need),withSugs)}catch(e){}
  return out}
 async function pageRows(tab,from,n){return await rest('GET',`ideas?select=${IDEA_COLS}&${PG_Q[tab]}&limit=${n}&offset=${from}`)||[]}
-function notePage(tab,rows,asked){const p=PG[tab];p.n+=rows.length;p.done=rows.length<asked;if(rows.length){const last=rows[rows.length-1];p.edge=tab==='new'?Date.parse(last.created_at):tab==='top'?last.yes_count:Date.parse(last.made_at)}}
+function notePage(tab,rows,asked){const p=PG[tab];p.n+=rows.length;p.done=rows.length<asked;if(rows.length){const last=rows[rows.length-1];p.edge={s:last.sink||0,k:tab==='new'?Date.parse(last.created_at):tab==='top'?last.yes_count:Date.parse(last.made_at)}}}
 async function liveLoad(){
  let mine=[],votes=[],reacts=[];
  if(sess){[mine,votes,reacts]=await Promise.all([rest('POST','rpc/my_idea_ids',{}),restAll('votes?select=idea_id,value&order=idea_id'),restAll('reactions?select=idea_id,value&order=idea_id')]);S.me.token=sess.uid}
