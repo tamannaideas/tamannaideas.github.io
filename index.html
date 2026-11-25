@@ -244,7 +244,8 @@ main{max-width:1280px;margin:0 auto;padding-block:16px 110px}
 .c-desc{color:var(--fg);opacity:.9;white-space:pre-line;overflow-wrap:anywhere}
 /* Live site, milestone 1: marketplace & factory tools are still demo-only, so they stay hidden */
 body.live [data-act="skip"],body.live .msec:has([data-act="reset"]),body.live .fac-top .seg:has([data-act="f-tab"]),
-body.live .tier:has(#t-pub),body.live .giftf,body.live .fld:has(#mk-c),body.live .two:has(#mk-p),body.live .fld:has(#mk-f){display:none!important}
+/* live: prices in EUR only, no gift codes/discount codes yet, the seller name comes from the factory profile, payment happens at Mollie */
+body.live .giftf,body.live .fld:has(#mk-c),body.live .fld:has(#mk-f),body.live details:has(#d-c),body.live #payBlock,body.live .fld:has(#codeIn),body.live form[data-form="buy"] .demo{display:none!important}
 .adds{display:flex;flex-direction:column;gap:6px}.add{border-inline-start:3px solid var(--pri);padding:4px 10px;font-size:13.5px;display:flex;flex-direction:column;gap:2px}
 .fnote{border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;background:var(--surface-2)}
 .fnote.pend{border-style:dashed;border-color:var(--pri)}.fn-h{margin:0;font-weight:700}.fn-t{margin:0;white-space:pre-line;overflow-wrap:anywhere}
@@ -1324,7 +1325,7 @@ function sellActHTML(i){
 function renderFactory(){
  if(LIVE&&!FAC){$('#view').innerHTML=facAuthHTML();return}
  const th=(k,l)=>`<th><button data-act="f-sort" data-k="${k}" class="${UI.fSort===k?'on':''}">${l}${UI.fSort===k?(UI.fDir<0?' ↓':' ↑'):''}</button></th>`;
- const head=`<div><h2>${T('facTitle')} <button class="link" style="font-size:13px;font-weight:600" data-act="how" data-fac="1">${T('heroHow')}</button></h2><p class="muted">${T('facSub')} · <span dir="ltr">${T('yourHandle')(myHandle())}</span> · <span class="tnum">${T('contactLeft')(fmt(Math.max(0,CONTACT_MAX-contactsUsed())),fmt(CONTACT_MAX))}</span>${LIVE&&FAC?` · <b>${esc(FAC.name)}</b> <button class="link" data-act="fac-logout">${T('facLogout')}</button> · <button class="link" data-act="my-badges">🏷️ ${T('myBadges')}</button>`:''} · <button class="link" data-act="promo">🚀 ${T('promoBtn')}</button> · <button class="link" data-act="plans">📦 ${T('subL')}</button></p><div class="seg" style="margin-top:8px" role="group"><button data-act="f-tab" data-v="ideas" class="${UI.fTab!=='orders'?'on':''}">${T('facIdeas')}</button><button data-act="f-tab" data-v="products" class="${UI.fTab==='products'?'on':''}">${T('facProducts')} (${fmt(myProducts().length)})</button><button data-act="f-tab" data-v="orders" class="${UI.fTab==='orders'?'on':''}">${T('facOrders')} (${fmt(myOrders().length)})</button></div></div>`;
+ const head=`<div><h2>${T('facTitle')} <button class="link" style="font-size:13px;font-weight:600" data-act="how" data-fac="1">${T('heroHow')}</button></h2><p class="muted">${T('facSub')} · <span dir="ltr">${T('yourHandle')(myHandle())}</span> · <span class="tnum">${T('contactLeft')(fmt(Math.max(0,CONTACT_MAX-contactsUsed())),fmt(CONTACT_MAX))}</span>${LIVE&&FAC?` · <b>${esc(FAC.name)}</b> <button class="link" data-act="fac-logout">${T('facLogout')}</button> · <button class="link" data-act="my-badges">🏷️ ${T('myBadges')}</button>${LIVE?`<button class="btn sm" data-act="my-sales">📦 ${T('salesT')}</button>`:''}`:''} · <button class="link" data-act="promo">🚀 ${T('promoBtn')}</button> · <button class="link" data-act="plans">📦 ${T('subL')}</button></p><div class="seg" style="margin-top:8px" role="group"><button data-act="f-tab" data-v="ideas" class="${UI.fTab!=='orders'?'on':''}">${T('facIdeas')}</button><button data-act="f-tab" data-v="products" class="${UI.fTab==='products'?'on':''}">${T('facProducts')} (${fmt(myProducts().length)})</button><button data-act="f-tab" data-v="orders" class="${UI.fTab==='orders'?'on':''}">${T('facOrders')} (${fmt(myOrders().length)})</button></div></div>`;
  if(UI.fTab==='orders'){$('#view').innerHTML=`<section class="fac"><div class="fac-top">${head}</div>${ordersHTML()}</section>`;return}
  if(UI.fTab==='products'){$('#view').innerHTML=`<section class="fac"><div class="fac-top">${head}</div>${productsHTML()}</section>`;return}
  const nInv=S.ideas.filter(i=>(i.invites||[]).includes(myHandle())).length;
@@ -1393,6 +1394,7 @@ function pledgeHTML(i){
 }
 /* ---------- buyer: my orders, with the shipping countdown and automatic refunds ---------- */
 function buyerOrdersHTML(){
+ if(LIVE)return savedAcct()?`<div class="row"><button class="btn sm" data-act="my-purch">🛍️ ${T('purchT')}</button></div>`:'';
  const l=S.orders.filter(o=>o.buyer===S.me.token).slice().reverse();if(!l.length)return '';
  return `<section class="my-orders"><div class="row" style="justify-content:space-between"><h3 style="font-size:17px">${T('myOrdersT')}</h3><button class="btn sm" data-act="skip">${T('skip')}</button></div>${l.map(o=>{const i=byId(o.ideaId);if(!i)return '';const other=liveOffers(i).some(x=>x.id!==o.offerId);
   return `<article class="ord" data-id="${i.id}"><div class="mi-top"><b>${esc(tx(i.title))}</b><span class="muted tnum">${T('orderL')} ${o.no}</span></div><p class="muted tnum" style="font-size:13px">${facLink(o.fac,o.factory)} · ${money(o.total)}</p>${o.status==='placed'?`<p class="tnum ok-t">${T('shipLeft')(remTxt(o.shipBy-now()))}</p>`:o.status==='returnReq'?`<p class="late-t">↩️ ${T('retReqB')}</p>`:o.status==='shipped'?`<p class="ok-t">${T('shippedL')(esc(o.tracking))}</p><button class="btn sm ghost" style="align-self:flex-start" data-act="ret" data-o="${o.id}">↩️ ${T('retBtn')}</button>`:`<p class="late-t">${T('refundedB')}</p>${other?`<button class="btn sm pri" style="align-self:flex-start" data-act="buy" data-ex="${o.offerId}">${I.cart}${T('buyOther')}</button>`:''}`}</article>`}).join('')}</section>`;
@@ -1517,8 +1519,8 @@ const keyHTML=i=>`<h2>${T('keyTitle')}</h2><p>${T('keyBody')}</p><div class="key
 function makeHTML(i){return `<h2>${T('make')}</h2><p class="muted">${esc(tx(i.title))}</p><form data-form="make" data-pid="${i.id}" class="edit">
  <div class="tiers"><label class="tier"><input type="radio" name="tier" value="public" id="t-pub" checked><span><b>${T('tierPub')}</b><small>${T('tierPubD')}</small><em class="reach">${I.bell}${T('notifyCount').replace('{n}',fmt(yesN(i)))}</em></span></label><label class="tier"><input type="radio" name="tier" value="free" id="t-free"><span><b>${T('tierFree')}</b><small>${T('tierFreeD')}</small></span></label></div>
  <label class="fld">${T('factoryName')}<input name="factory" id="mk-f" required maxlength="60" value="${esc(S.me.factory)}"></label>
- <label class="fld">${T('sellCur')}<select class="inp" name="cur" id="mk-c">${curOptions(myCur())}</select></label>
- <div class="two"><label class="fld">${T('price')}<input name="price" id="mk-p" type="number" min="0.01" step="0.01" value="${Math.max(1,Math.round(fromUSD(25,myCur())))}" required></label><label class="fld">${T('shipping')}<input name="shipping" id="mk-s" type="number" min="0" step="0.01" value="${Math.round(fromUSD(5,myCur()))}" required></label></div>
+ <label class="fld">${T('sellCur')}<select class="inp" name="cur" id="mk-c">${curOptions(LIVE?'EUR':myCur())}</select></label>
+ <div class="two"><label class="fld">${T('price')}${LIVE?' (€)':''}<input name="price" id="mk-p" type="number" min="1" step="0.01" value="${Math.max(1,Math.round(fromUSD(25,LIVE?'EUR':myCur())))}" required></label><label class="fld">${T('shipping')}${LIVE?' (€)':''}<input name="shipping" id="mk-s" type="number" min="0" step="0.01" value="${Math.round(fromUSD(5,LIVE?'EUR':myCur()))}" required></label></div>
  ${pledgeHintHTML(i)}
  <label class="fld">${T('optsL')}<textarea name="opts" id="mk-o" rows="2" placeholder="${T('optsPh')}"></textarea></label>
  <div id="pubf" class="edit"><label class="fld">${T('handlingL')}<select class="inp" name="handling" id="mk-h">${[1,2,3].map(d=>`<option value="${d}"${d===2?' selected':''}>${T('hOpt')(d)}</option>`).join('')}</select></label>
@@ -1774,6 +1776,11 @@ document.addEventListener('submit',async e=>{
   if(!pub&&!/^https?:\/\/\S+\.\S+/i.test(proof)){f.elements.proof.focus();return}
   if(pub&&!f.elements.agree.checked){f.elements.agree.focus();return}
   const base={factory:fac,fac:myHandle(),price,shipping:ship,cur,options:parseOpts(f.opts.value),gift:giftOn?{code:genGift(),freeShip:f.elements.giftShip.checked,used:false}:null,mode:giftOn?'gift':'notify',msg:m||{ar:L.ar.msgPh,en:L.en.msgPh,zh:L.zh.msgPh,tr:L.tr.msgPh}};
+  /* Live: listing for sale is saved by the database (price in EUR cents); the screens refresh from it */
+  if(LIVE&&pub){const b=f.querySelector('button.pri');b.disabled=true;
+   try{await rest('POST','rpc/save_listing',{p_idea:p.id,p_price_cents:Math.round(pIn*100),p_shipping_cents:Math.round(sIn*100),p_handling:Math.min(3,Math.max(1,parseInt(f.elements.handling.value,10)||3)),p_options:f.opts.value||'',p_message:m||''});
+    closeModal();toast(T('publicDone'));await liveRefresh()}catch(x){b.disabled=false;dbFail(x)}
+   return}
   if(pub){
    /* Each factory adds its own offer; nobody replaces or blocks another seller */
    (p.offers||(p.offers=[])).push(Object.assign(base,{id:uid(),discount:readDisc(f),handling:Math.min(3,Math.max(1,parseInt(f.elements.handling.value,10)||3)),active:true,deposit:50,at:Date.now()}));
@@ -1793,6 +1800,17 @@ document.addEventListener('submit',async e=>{
  }else if(kind==='buy'){
   const p=byId(f.dataset.pid);if(!p)return;const pr=curOffer(p),e=UI.eff,c=calcTotals(p),opts={},el=f.elements;if(!pr)return;
   (pr.options||[]).forEach((o,k)=>{opts[o.n]=el['opt'+k].value});
+  /* Live: the order (and its amount) is made by the database; payment then goes through Mollie */
+  if(LIVE){
+   if(!savedAcct()){toast(T('buyNeedsAcct'));openModal(acctHTML('save'),'acct');return}
+   if(!pr.live)return;const b=f.querySelector('#payBtn');b.disabled=true;
+   const ship={name:el.an.value.trim(),country:el.ac.value.trim(),city:el.ay.value.trim(),address:el.aa.value.trim(),phone:el.ap.value.trim(),opts:Object.entries(opts).map(([k,v])=>k+': '+v).join(', ')};
+   try{const r=await rest('POST','rpc/create_product_order',{p_listing:pr.id,p_qty:UI.qty,p_ship:ship});
+    if(PAY_ON){const at=await token(),res=await fetch(SB.url+'/functions/v1/pay',{method:'POST',headers:{apikey:SB.key,Authorization:'Bearer '+at,'Content-Type':'application/json'},body:JSON.stringify({order:r.id,back:location.origin+location.pathname+'#paid-'+r.id})});
+     const j=await res.json();if(!res.ok||!j.checkout)throw new Error(j.error||'pay');location.href=j.checkout;return}
+    $('#mc').innerHTML=`<div class="done">${I.check}<h2 style="padding:0">${T('buySaved')}</h2><p class="muted tnum">${T('promoTotal')}: ${moneyIn(r.amount_cents/100,'EUR')}</p><p class="soon-n">⏳ ${T('coSoon')}</p>${OFFICIAL&&PAY_TEST?`<button class="btn sm" data-act="ord-testpay" data-id="${r.id}">🧪 ${T('testPay')}</button>`:''}<button class="btn pri" data-act="modal-close">${T('close')}</button></div>`}
+   catch(x){b.disabled=false;const m=x.message||'';toast(/needs_account/.test(m)?T('buyNeedsAcct'):/own_product/.test(m)?T('buyOwn'):/not_for_sale/.test(m)?T('buyGone'):/rate_limit/.test(m)?T('rateErr'):T('netErr'))}
+   return}
   const no='TM'+Math.floor(1e5+Math.random()*9e5);
   S.orders.push({id:uid(),no,ideaId:p.id,spec:{t:tx(p.title),d:tx(p.desc),fn:((fnOf(p,pr.fac)||{}).verdict==='ok'?fnOf(p,pr.fac).text:'')},offerId:pr.id||null,fac:pr.fac||null,factory:pr.factory,buyer:S.me.token,shipBy:now()+offerDays(pr)*DAY,qty:UI.qty,opts,total:c.tot,gift:!!(e&&e.kind==='gift'),code:e?e.code:'',addr:{name:el.an.value.trim(),country:el.ac.value.trim(),city:el.ay.value.trim(),line:el.aa.value.trim(),phone:el.ap.value.trim()},at:Date.now(),status:'placed',tracking:''});
   if(e&&e.kind==='gift')pr.gift.used=true;
@@ -1980,7 +1998,8 @@ const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).pus
    When more ideas load later, applyFac() attaches the same data again without asking the database. */
 let FACDATA=null;
 async function liveLoadFac(){
- const [facs,makes,notes]=await Promise.all([restAll('factories?select=handle,name,country,website&order=handle'),restAll('makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc,id.asc'),restAll('factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&order=idea_id,handle')]);
+ const [facs,makes,notes,lists]=await Promise.all([restAll('factories?select=handle,name,country,website&order=handle'),restAll('makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc,id.asc'),restAll('factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&order=idea_id,handle'),
+  restAll('listings?select=id,idea_id,handle,factory_name,price_cents,shipping_cents,handling_days,options,message,created_at&active=eq.true&order=created_at,id').catch(()=>[])]);
  FACTORIES.length=0;(facs||[]).forEach(f=>FACTORIES.push([f.handle,f.name]));
  let det=[],invs=[],thr=[],msgs=[];FAC=null;
  OFFICIAL=false;
@@ -1988,14 +2007,18 @@ async function liveLoadFac(){
   try{OFFICIAL=!!(await rest('POST','rpc/is_official',{}))}catch(e){}
   [det,invs,thr]=await Promise.all([rest('POST','rpc/my_make_details',{}),restAll('invites?select=idea_id,handle&order=idea_id,handle'),restAll('threads?select=id,idea_id,handle,factory_name,blocked,created_at&order=created_at,id')]);
   if((thr||[]).length)msgs=await restAll('messages?select=id,thread_id,sender,body,created_at&order=created_at.asc,id.asc')}
- FACDATA={det,makes,notes,invs,thr,msgs};applyFac()}
-function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs}=FACDATA;
- const D=new Map((det||[]).map(d=>[d.id,d])),M=grp(makes,'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id');
- S.me.facPriv=[];
+ FACDATA={det,makes,notes,invs,thr,msgs,lists};applyFac()}
+/* A live listing becomes an "offer" in the shapes the selling screens already use. Prices are stored in EUR cents;
+   the screens keep prices in USD and convert to each visitor's currency, so EUR is turned into USD here. eur/eurShip keep the exact charge. */
+const listingOffer=l=>({id:l.id,live:true,fac:l.handle,factory:l.factory_name,price:l.price_cents/100/FX.EUR,shipping:l.shipping_cents/100/FX.EUR,cur:'EUR',eur:l.price_cents,eurShip:l.shipping_cents,handling:l.handling_days,options:parseOpts(l.options),msg:l.message||'',active:true,mode:'notify',at:Date.parse(l.created_at)});
+function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs,lists}=FACDATA;
+ const D=new Map((det||[]).map(d=>[d.id,d])),M=grp((makes||[]).filter(m=>m.kind!=='platform'),'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id'),LS=grp(lists,'idea_id');
+ S.me.facPriv=[];S.me.facPub=[];
  S.ideas.forEach(i=>{
   /* Latest maker is shown as the product; earlier outside makers stay as history. Proof link and message reach only the creator and that factory. */
   const ms=(M[i.id]||[]).map(m=>{const d=D.get(m.id)||{};return {id:m.id,fac:m.handle,factory:m.factory_name,proof:d.proof_url||'',msg:d.message||'',mode:'notify',at:Date.parse(m.created_at),handling:3}});
-  i.priv=ms.length?ms[ms.length-1]:null;i.outside=ms.slice(0,-1);i.offers=[];
+  i.priv=ms.length?ms[ms.length-1]:null;i.outside=ms.slice(0,-1);i.offers=(LS[i.id]||[]).map(listingOffer);
+  if(FAC&&i.offers.some(o=>o.fac===FAC.handle))S.me.facPub.push(i.id);
   if(FAC&&ms.some(m=>m.fac===FAC.handle))S.me.facPriv.push(i.id);
   i.fnotes=(N[i.id]||[]).map(n=>({fac:n.handle,name:n.factory_name,text:n.body,at:Date.parse(n.updated_at),verdict:n.verdict||null}));
   i.invites=(V[i.id]||[]).map(v=>v.handle);
@@ -2234,6 +2257,29 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-act=
  else if(a==='ord-cancel'){try{await rest('POST','rpc/cancel_order',{p_id:b.dataset.id});b.closest('li').querySelector('span').textContent=T('ordSt').canceled;b.remove()}catch(x){toast(T('netErr'))}}
  else if(a==='ord-testpay'){b.disabled=true;try{await rest('POST','rpc/test_pay',{p_id:b.dataset.id});toast('✓ '+T('ordSt').paid);await loadFacPlan();await liveRefresh()}catch(x){toast(/not_official/.test(x.message||'')?T('teamNot'):T('netErr'));b.disabled=false}}
 });
+/* ---- Live sales (seller) and purchases (buyer). Addresses come only from the database functions, which show them
+   to the seller after payment and to the buyer. ---- */
+const shipSt=s=>T('shipSt')[s||'pending']||s;
+async function salesHTML(){let l=[];try{l=await rest('POST','rpc/my_sales',{})||[]}catch(e){}
+ return `<h2>📦 ${T('salesT')}</h2>${l.length?`<ul class="lic-l">${l.map(o=>{const it=o.item,s=o.ship||{};return `<li style="flex-direction:column;align-items:stretch;gap:6px"><b>${esc(it.title||'')} × ${fmt(it.qty)}</b>${it.opts?`<small class="muted">${esc(it.opts)}</small>`:''}
+  <small class="tnum">${moneyIn(o.amount_cents/100,'EUR')} · ${T('youGet')(moneyIn(o.amount_cents/100*(1-FEE),'EUR'))} · ${ago(Date.parse(o.paid_at))}</small>
+  <div class="co" style="font-size:13px;line-height:1.6">📍 <b>${esc(s.name)}</b><br>${esc(s.address)}، ${esc(s.city)}، ${esc(s.country)}<br><span dir="ltr">☎ ${esc(s.phone)}</span></div>
+  <span class="${o.ship_status==='received'?'ok-t':''}">${shipSt(o.ship_status)}${o.tracking?` · <span dir="ltr">${esc(o.tracking)}</span>`:''}</span>
+  ${o.ship_status==='new'?`<form class="row" data-form="ship" data-id="${o.id}"><input class="inp" name="t" maxlength="120" dir="ltr" placeholder="${T('trackPh')}" style="flex:1"><button class="btn sm pri">🚚 ${T('markShipped')}</button></form><small class="muted">${T('shipBy')(fmt(it.handling_days||3))}</small>`:''}</li>`}).join('')}</ul>`:`<p class="muted">${T('salesNone')}</p>`}`}
+async function purchHTML(){let l=[];try{l=await rest('POST','rpc/my_purchases',{})||[]}catch(e){}
+ return `<h2>🛍️ ${T('purchT')}</h2>${l.length?`<ul class="lic-l">${l.map(o=>{const it=o.item;return `<li style="flex-direction:column;align-items:stretch;gap:4px"><b>${esc(it.title||'')} × ${fmt(it.qty)}</b><small class="muted">${esc(it.factory||'')} · ${moneyIn(o.amount_cents/100,'EUR')} · ${ago(Date.parse(o.created_at))}</small>
+  <span>${o.status==='paid'?shipSt(o.ship_status):T('ordSt')[o.status]||o.status}${o.tracking?` · ${T('trackL')}: <span dir="ltr">${esc(o.tracking)}</span>`:''}</span>
+  ${o.status==='paid'&&o.ship_status!=='received'?`<button class="btn sm pri" data-act="got-it" data-id="${o.id}">✅ ${T('gotIt2')}</button>`:''}</li>`}).join('')}</ul>`:`<p class="muted">${T('purchNone')}</p>`}`}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-act="my-sales"],[data-act="my-purch"],[data-act="got-it"]');if(!b)return;e.preventDefault();const a=b.dataset.act;
+ if(a==='my-sales'){openModal('<p class="muted">…</p>','sales');$('#mc').innerHTML=await salesHTML()}
+ else if(a==='my-purch'){openModal('<p class="muted">…</p>','purch');$('#mc').innerHTML=await purchHTML()}
+ else{b.disabled=true;try{await rest('POST','rpc/confirm_received',{p_order:b.dataset.id});toast(T('thanksGot'));$('#mc').innerHTML=await purchHTML()}catch(x){b.disabled=false;toast(T('netErr'))}}});
+document.addEventListener('submit',async e=>{const f=e.target;if(f.dataset.form!=='ship')return;e.preventDefault();const b=f.querySelector('button');b.disabled=true;
+ try{await rest('POST','rpc/mark_shipped',{p_order:f.dataset.id,p_tracking:f.t.value});toast(T('shippedT'));$('#mc').innerHTML=await salesHTML()}catch(x){b.disabled=false;toast(T('netErr'))}});
+Object.assign(L.ar,{salesT:'مبيعاتي',salesNone:'لا توجد مبيعات مدفوعة بعد.',purchT:'مشترياتي',purchNone:'لا توجد مشتريات بعد.',youGet:a=>`يصلك ${a} بعد عمولة 5%`,trackPh:'رقم التتبع (اختياري)',markShipped:'تم الشحن',shipBy:d=>`اشحنه خلال ${d} أيام عمل كما أعلنت.`,trackL:'رقم التتبع',gotIt2:'استلمت الطلب',thanksGot:'شكراً! سجّلنا أنك استلمت طلبك.',shippedT:'سجّلنا الشحن، ووصل التحديث للمشتري.',shipSt:{pending:'بانتظار الدفع',new:'مدفوع، بانتظار الشحن',shipped:'🚚 تم الشحن',received:'✅ تم الاستلام'},buyNeedsAcct:'للشراء احفظ حسابك أولاً (إيميل وكلمة مرور)، عشان توصلك تحديثات طلبك وتقدر ترجعه.',buyOwn:'لا يمكنك شراء منتجك.',buyGone:'هذا العرض لم يعد متاحاً.',buySaved:'تم حفظ طلبك'});
+Object.assign(L.en,{salesT:'My sales',salesNone:'No paid sales yet.',purchT:'My purchases',purchNone:'No purchases yet.',youGet:a=>`you receive ${a} after the 5% fee`,trackPh:'Tracking number (optional)',markShipped:'Mark shipped',shipBy:d=>`Ship it within ${d} working days, as you promised.`,trackL:'Tracking',gotIt2:'I received it',thanksGot:'Thanks! We noted that you received your order.',shippedT:'Shipment saved; the buyer sees the update.',shipSt:{pending:'Awaiting payment',new:'Paid, awaiting shipment',shipped:'🚚 Shipped',received:'✅ Received'},buyNeedsAcct:'To buy, save your account first (email and password) so you get order updates and can return it.',buyOwn:'You can’t buy your own product.',buyGone:'This offer is no longer available.',buySaved:'Your order is saved'});
+Object.assign(L.zh,{salesT:'我的销售',salesNone:'还没有已付款的销售。',purchT:'我的购买',purchNone:'还没有购买。',youGet:a=>`扣除 5% 佣金后你收到 ${a}`,trackPh:'快递单号(可选)',markShipped:'标记已发货',shipBy:d=>`请按承诺在 ${d} 个工作日内发货。`,trackL:'快递单号',gotIt2:'我已收到',thanksGot:'谢谢!已记录你收到订单。',shippedT:'已保存发货信息,买家可以看到。',shipSt:{pending:'待支付',new:'已付款,待发货',shipped:'🚚 已发货',received:'✅ 已收货'},buyNeedsAcct:'购买前请先保存账户(邮箱和密码),以便接收订单更新和退货。',buyOwn:'不能购买自己的产品。',buyGone:'该报价已不可用。',buySaved:'订单已保存'});
+Object.assign(L.tr,{salesT:'Satışlarım',salesNone:'Henüz ödenmiş satış yok.',purchT:'Satın aldıklarım',purchNone:'Henüz satın alma yok.',youGet:a=>`%5 komisyondan sonra ${a} alırsın`,trackPh:'Takip numarası (isteğe bağlı)',markShipped:'Kargolandı',shipBy:d=>`Söz verdiğin gibi ${d} iş günü içinde kargola.`,trackL:'Takip',gotIt2:'Teslim aldım',thanksGot:'Teşekkürler! Siparişini teslim aldığını kaydettik.',shippedT:'Kargo kaydedildi; alıcı güncellemeyi görür.',shipSt:{pending:'Ödeme bekleniyor',new:'Ödendi, kargo bekleniyor',shipped:'🚚 Kargolandı',received:'✅ Teslim alındı'},buyNeedsAcct:'Satın almak için önce hesabını kaydet (e-posta ve şifre); sipariş güncellemelerini al ve iade edebil.',buyOwn:'Kendi ürününü satın alamazsın.',buyGone:'Bu teklif artık mevcut değil.',buySaved:'Siparişin kaydedildi'});
 document.addEventListener('submit',e=>{const f=e.target;if(f.dataset.form!=='badge-buy')return;e.preventDefault();const i=byId(f.dataset.pid);if(!i)return;
  const price=+f.p.value,cur=f.c.value,u=f.u.value.trim();if(!(price>0))return;
  openModal(checkoutHTML({kind:'badge',item:{idea:i.id,price,currency:cur,proof:u},title:'🏷️ '+T('qrT')+' · '+tx(i.title),lines:[T('badgePriceL')(moneyIn(price,cur)),T('qrPer')],amount:49}),'checkout')});
