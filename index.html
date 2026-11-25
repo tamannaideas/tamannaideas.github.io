@@ -2221,7 +2221,7 @@ function badgeBuyHTML(i){return `<h2>🏷️ ${T('qrT')}</h2><p class="muted" st
  <button class="btn pri wide">${T('coNext')}</button></form>`}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-act="buy-plan"],[data-act="buy-seats"],[data-act="buy-badge"],[data-act="buy-promo"],[data-act="co-pay"],[data-act="ord-cancel"],[data-act="ord-testpay"]');if(!b)return;e.preventDefault();const a=b.dataset.act;
  if(a==='buy-plan'){const k=b.dataset.v,p=PLANS.find(x=>x.k===k);openModal(checkoutHTML({kind:'plan',item:{plan:k},title:'📦 '+planName(k),lines:[T('planCap')(fmt(p.cap)),T('planMonth')],amount:p.price}),'checkout')}
- else if(a==='buy-seats')openModal(checkoutHTML({kind:'seats',item:{},title:'👥 '+T('seatsBuy'),lines:[T('seatsD'),T('planMonth')],amount:29}),'checkout');
+ else if(a==='buy-seats')openModal(checkoutHTML({kind:'seats',item:{},title:'👥 '+T('seatsBuy'),lines:[T('seatsD'),T('planMonth')],amount:49}),'checkout');
  else if(a==='buy-badge'){const i=byId(b.dataset.pid);if(i)openModal(badgeBuyHTML(i),'badge-buy')}
  else if(a==='buy-promo'){const p=UI.promo,i=byId(UI.promoPid);if(!i)return;openModal(checkoutHTML({kind:'promo',item:{idea:i.id,rises:p.n,days:p.d,from:p.auto?9:p.from,to:p.auto?22:p.to},title:'🚀 '+tx(i.title),lines:[`${fmt(p.n)} ${T('promoRisesW')} · ${fmt(p.d)} ${T('promoDaysW')}`,`${T('promoUnit')}: ${moneyIn(promoUnit(p.n),'EUR')}`],amount:promoUnit(p.n)*p.n}),'checkout')}
  else if(a==='co-pay'){const o=UI.co,err=$('#co-err');if(!o)return;b.disabled=true;err.hidden=true;
