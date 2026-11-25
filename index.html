@@ -327,6 +327,8 @@ body.live .tier:has(#t-pub),body.live .giftf,body.live .fld:has(#mk-c),body.live
 .wl-h{display:flex;flex-direction:column;gap:4px;padding-block:4px}
 .wl-h h2{font-size:24px;font-weight:800}
 .avail{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:12px;background:var(--verify-soft);color:var(--verify);font-weight:700}
+.sentinel{height:1px}.sentinel.busy{height:48px;background:radial-gradient(circle,var(--muted) 3px,transparent 4px) center/18px 18px no-repeat;opacity:.6;animation:pulse 1s infinite alternate}
+@keyframes pulse{to{opacity:.15}}
 .empty-box{background:var(--surface);border:1.5px dashed var(--line);border-radius:16px;padding:28px 18px;text-align:center;color:var(--muted);display:flex;flex-direction:column;gap:12px;align-items:center}
 .empty-box svg{width:34px;height:34px;color:var(--wish)}
 
@@ -1176,7 +1178,8 @@ function cardHTML(i){
 function refreshCard(id){const i=byId(id);document.querySelectorAll(`.card[data-id="${id}"]`).forEach(el=>{el.outerHTML=cardHTML(i)});if(UI.view==='factory')refreshFactory()}
 
 /* ---------- feed ---------- */
-const heroStats=()=>T('heroStats')(fmt(S.ideas.length),fmt(S.ideas.reduce((s,i)=>s+yesN(i),0)),fmt(S.ideas.filter(i=>i.status!=='open').length));
+/* Live totals come from the database (all ideas), not from the ideas loaded on this page */
+const heroStats=()=>LIVE&&STATS?T('heroStats')(fmt(STATS.ideas),fmt(STATS.wishes),fmt(STATS.made)):T('heroStats')(fmt(S.ideas.length),fmt(S.ideas.reduce((s,i)=>s+yesN(i),0)),fmt(S.ideas.filter(i=>i.status!=='open').length));
 /* The animated 4-step story (idea → post → factory → everyone happy). Shown on every visit unless the visitor hides it; also opens the explainer. */
 /* Swap only the hero block, so the composer and feed below keep their state */
 function repaintHero(){const el=document.querySelector('#view .hero, #view .hero-mini');if(el)el.outerHTML=heroHTML()}
@@ -1208,16 +1211,32 @@ function composeHTML(){
    Every rise is temporary: newer products or rises push it down. Idea lists stay equal for everyone. */
 const isMadeIdea=i=>i.status&&i.status!=='open';
 const riseTs=i=>Math.max(i.madeTs||madeAt(i)||0,...(i.rises||[]).filter(t=>t<=Date.now()));
-function sortedFeed(){const l=S.ideas.slice();
- if(UI.tab==='top')return l.filter(i=>!isMadeIdea(i)).sort((a,b)=>yesN(b)-yesN(a));
- if(UI.tab==='made')return l.filter(isMadeIdea).sort((a,b)=>riseTs(b)-riseTs(a));
- return l.sort((a,b)=>b.created-a.created)}
+function sortedFeed(){let l=S.ideas.slice();const tab=UI.tab==='top'||UI.tab==='made'?UI.tab:'new';
+ if(tab==='top')l=l.filter(i=>!isMadeIdea(i)).sort((a,b)=>yesN(b)-yesN(a));
+ else if(tab==='made')l=l.filter(isMadeIdea).sort((a,b)=>riseTs(b)-riseTs(a));
+ else l=l.sort((a,b)=>b.created-a.created);
+ /* Live: stop where this list's own pages stopped; ideas below that edge wait for their page */
+ const p=LIVE&&PG[tab];if(p&&!p.done&&p.edge!==null)l=l.filter(i=>!i.live||pgKey[tab](i)>=p.edge);
+ return l}
+const moreOnServer=()=>LIVE&&!PG[UI.tab==='top'||UI.tab==='made'?UI.tab:'new'].done;
 let io;
 function renderFeed(){
  const list=sortedFeed();
- $('#view').innerHTML=`<div class="col">${heroHTML()}${composeHTML()}<div class="feed" id="feed">${list.length?list.slice(0,UI.limit).map(cardHTML).join(''):UI.tab==='made'?`<div class="empty-box">🏭<p>${T('madeEmpty')}</p></div>`:''}</div>${list.length>UI.limit?'<div id="sentinel" style="height:1px"></div>':''}</div>`;
+ $('#view').innerHTML=`<div class="col">${heroHTML()}${composeHTML()}<div class="feed" id="feed">${list.length?list.slice(0,UI.limit).map(cardHTML).join(''):UI.tab==='made'?`<div class="empty-box">🏭<p>${T('madeEmpty')}</p></div>`:''}</div>${list.length>UI.limit||moreOnServer()?'<div id="sentinel" class="sentinel"></div>':''}</div>`;
  const s=$('#sentinel');if(io)io.disconnect();
- if(s&&'IntersectionObserver' in window){io=new IntersectionObserver(es=>{if(!es[0].isIntersecting)return;const l=sortedFeed(),from=UI.limit;UI.limit+=12;$('#feed').insertAdjacentHTML('beforeend',l.slice(from,UI.limit).map(cardHTML).join(''));if(UI.limit>=l.length){io.disconnect();s.remove()}},{rootMargin:'600px'});io.observe(s)}
+ if(s&&'IntersectionObserver' in window){let busy=false,stop=false;const tab=UI.tab;
+  const ob=io=new IntersectionObserver(async es=>{if(!es[0].isIntersecting||busy||stop)return;busy=true;
+   try{let l=sortedFeed();
+    if(UI.limit+12>l.length&&moreOnServer()){s.classList.add('busy');const ok=await loadMore(tab==='top'||tab==='made'?tab:'new');s.classList.remove('busy');
+     if(!s.isConnected||UI.tab!==tab){stop=true;return}
+     if(!ok&&moreOnServer()){stop=true;return}/* network trouble: stop instead of retrying in a loop; the next visit tries again */
+     l=sortedFeed()}
+    const f=$('#feed');if(!f){stop=true;return}const cards=[...f.querySelectorAll('.card')],have=new Set(cards.map(c=>c.dataset.id));
+    UI.limit=Math.max(UI.limit,cards.length)+12;
+    f.insertAdjacentHTML('beforeend',l.slice(0,UI.limit).filter(i=>!have.has(i.id)).map(cardHTML).join(''));
+    if(UI.limit>=l.length&&!moreOnServer()){stop=true;s.remove()}}
+   finally{busy=false;if(stop)ob.disconnect();else if(s.isConnected){ob.unobserve(s);ob.observe(s)}/* still on screen (short page)? keep going */}},{rootMargin:'600px'});
+  ob.observe(s)}
  if(UI.composeOpen)updateSimilar();
 }
 
@@ -1243,7 +1262,12 @@ function updateSimilar(){
  const res=UI.draft.title.trim().length<4?[]:findSimilar(UI.draft.title,UI.draft.desc),top=res[0],dup=isDup(top);
  box.innerHTML=res.length?`<div class="similar${dup?' dup':''}"><p>${dup?T('dupBlock'):T('similar')}</p><ul>${res.map(([i,s])=>`<li><button type="button" data-act="peek" data-pid="${i.id}">${esc(tx(i.title))}</button> <small class="tnum">· ${T('matchPct')(Math.round(s*100))} · ${fmt(yesN(i))} ${T('wishers')}</small></li>`).join('')}</ul></div>`:'';
  const df=$('#diffF');if(df)df.hidden=!(top&&!dup);
+ /* Live: also look in the database for matching ideas that aren't loaded, then check again */
+ if(LIVE&&UI.draft.title.trim().length>=4){clearTimeout(updateSimilar.t);updateSimilar.t=setTimeout(()=>{const k=simKey;fetchSimilar(UI.draft.title,UI.draft.desc).then(()=>{if(simKey!==k&&$('#similar'))updateSimilar.after()})},500)}
 }
+updateSimilar.after=()=>{const box=$('#similar');if(!box)return;const res=findSimilar(UI.draft.title,UI.draft.desc),top=res[0],dup=isDup(top);
+ box.innerHTML=res.length?`<div class="similar${dup?' dup':''}"><p>${dup?T('dupBlock'):T('similar')}</p><ul>${res.map(([i,s])=>`<li><button type="button" data-act="peek" data-pid="${i.id}">${esc(tx(i.title))}</button> <small class="tnum">· ${T('matchPct')(Math.round(s*100))} · ${fmt(yesN(i))} ${T('wishers')}</small></li>`).join('')}</ul></div>`:'';
+ const df=$('#diffF');if(df)df.hidden=!(top&&!dup)};
 
 /* ---------- wishlist ---------- */
 function renderWish(){
@@ -1461,7 +1485,7 @@ function renderMine(){
  const mine=S.ideas.filter(isOwner).sort((a,b)=>b.created-a.created),ranked=S.ideas.slice().sort((a,b)=>yesN(b)-yesN(a));
  const w=mine.reduce((s,i)=>s+yesN(i),0),made=mine.filter(i=>i.status!=='open').length;
  $('#view').innerHTML=`<div class="col col-wide"><div class="wl-h"><h2>${T('navMine')}</h2><p class="muted tnum">${T('mineSub')(fmt(mine.length),fmt(w),fmt(made))}</p></div>${acctBoxHTML()}
- ${mine.length?mine.map(i=>miHTML(i,ranked.indexOf(i)+1,ranked.length)).join(''):`<div class="empty-box">${I.bulb}<p>${T('mineEmpty')}</p><button class="btn pri" data-act="compose-open">${T('postFirst')}</button></div>`}
+ ${mine.length?mine.map(i=>LIVE&&STATS&&RANKS[i.id]?miHTML(i,RANKS[i.id],STATS.ideas):miHTML(i,ranked.indexOf(i)+1,ranked.length)).join(''):`<div class="empty-box">${I.bulb}<p>${T('mineEmpty')}</p><button class="btn pri" data-act="compose-open">${T('postFirst')}</button></div>`}
  <section class="recover-box"><h3>${I.lock} ${T('recover')}</h3><p class="muted" style="font-size:13.5px">${T('recoverHint')}</p><form data-form="recover" class="sug-f"><input class="inp" name="k" id="rk" placeholder="TM-XXXX-XXXX" dir="ltr" autocomplete="off" spellcheck="false" aria-label="${T('recover')}"><button class="btn sm">${T('recoverBtn')}</button></form><p id="rmsg" class="muted" aria-live="polite"></p></section></div>`;
  mine.forEach(i=>{i.comments.forEach(c=>{if(!c.adopted&&!c.dismissed&&!S.me.seenSug.includes(c.id))S.me.seenSug.push(c.id)});S.me.seenStatus[i.id]=i.status;S.me.seenMs[i.id]=msOf(i)});
  save();setTimeout(updateBadges,1500);
@@ -1692,7 +1716,7 @@ document.addEventListener('click',async e=>{
  }
 });
 
-document.addEventListener('submit',e=>{
+document.addEventListener('submit',async e=>{
  const f=e.target,kind=f.dataset.form;if(!kind)return;e.preventDefault();
  const host=f.closest('[data-id]'),id=host?host.dataset.id:null,i=id?byId(id):null;
  if(kind==='compose'){
@@ -1702,6 +1726,8 @@ document.addEventListener('submit',e=>{
   if(desc.length<5)return fail(T('fDescPh'),$('#c-desc'));
   if(!anon&&name.length<2)return fail(T('needName'),$('#c-name'));
   if(LIVE&&!anon&&!OFFICIAL&&isReservedName(name))return fail(T('nameReserved'),$('#c-name'));
+  /* Live: make sure the duplicate check has looked through the whole database first */
+  if(LIVE){const b=f.querySelector('button[type=submit],.btn.pri');if(b)b.disabled=true;try{await fetchSimilar(title,desc)}finally{if(b)b.disabled=false}}
   const sims=findSimilar(title,desc),top=sims[0];let diff='';
   if(isDup(top)){updateSimilar();err.innerHTML=`${esc(T('dupBlock'))} <button type="button" class="link" data-act="peek" data-pid="${top[0].id}">${esc(T('openExisting'))}</button>`;err.hidden=false;return}
   if(top){diff=(UI.draft.diff||'').trim();if(diff.length<15){$('#diffF').hidden=false;return fail(T('diffShort'),$('#c-diff'))}}
@@ -1822,7 +1848,9 @@ document.addEventListener('keydown',e=>{
  if(e.key==='Enter'&&e.target.matches('tr[data-act="f-row"],.hero-mini[data-act="hero-peek"],.hero[data-act="hero-tap"]'))e.target.click();
  if(e.key==='Enter'&&e.target.id==='codeIn'){e.preventDefault();applyCode(byId(e.target.closest('form').dataset.pid))}
 });
-function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h==='terms'){openModal(termsHTML(),'terms');return}if(h.startsWith('verify-')&&LIVE){openVerify(h.slice(7));return}if(h.startsWith('idea-')){const i=byId(h.slice(5));if(i){openIdea(i);return}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
+function route(){const h=location.hash.slice(1);if(h==='team'&&LIVE){openModal(teamHTML(),'team');return}if(h==='terms'){openModal(termsHTML(),'terms');return}if(h.startsWith('verify-')&&LIVE){openVerify(h.slice(7));return}if(h.startsWith('idea-')){const id=h.slice(5),i=byId(id);if(i){openIdea(i);return}
+  /* Live: a shared link to an idea that isn't loaded yet — fetch just that idea */
+  if(LIVE&&!fetchIdea.tried){fetchIdea.tried=id;fetchIdea(id).then(x=>{fetchIdea.tried=null;if(x&&location.hash==='#idea-'+id)openIdea(x)})}}if(UI.modal==='idea'&&!$('#modal').hidden)closeModal(true);setView(h)}
 window.addEventListener('hashchange',route);
 
 /* ---------- live data layer (Supabase over plain fetch: no library, fast load) ----------
@@ -1842,23 +1870,72 @@ const sha256=async s=>[...new Uint8Array(await crypto.subtle.digest('SHA-256',ne
 function dbFail(e){console.warn('tamanna db',e);const m=e.message||'';toast(/rate_limit/.test(m)?T('rateErr'):/contact_limit/.test(m)?T('contactLimit'):/invite_max_3/.test(m)?T('invMax'):/not_a_factory/.test(m)?T('facNeed'):/reserved_name/.test(m)?T('nameReserved'):T('netErr'))}
 const IDEA_COLS='id,author_name,official,title,description,lang,image_url,images,yes_count,no_count,like_count,dislike_count,made_at,created_at,edited_at';
 let liveAt=0;
+/* Ideas load page by page, so the site never stops at a fixed number of ideas.
+   Each list (new / most wished / made) is read from the database in its own order; S.ideas is the cache of everything
+   loaded so far (those pages + my ideas + my wishlist + opened links + similar-idea matches). A list only shows cached
+   ideas down to the last row its own pages reached, so nothing appears out of order before its turn. */
+const PAGE=Math.min(200,Math.max(2,+new URLSearchParams(location.search).get('pg')||48)),IDS_CHUNK=80;/* ?pg=N only for testing paging */
+const PG={new:{n:0,done:false,edge:null},top:{n:0,done:false,edge:null},made:{n:0,done:false,edge:null}};
+const PG_Q={new:'order=created_at.desc,id.desc',top:'made_at=is.null&order=yes_count.desc,created_at.desc,id.desc',made:'made_at=not.is.null&order=made_at.desc,id.desc'};
+const pgKey={new:i=>i.created,top:i=>yesN(i),made:i=>riseTs(i)};
+let STATS=null,RANKS={},mineSet=new Set();
+const chunks=(a,n)=>{const o=[];for(let k=0;k<a.length;k+=n)o.push(a.slice(k,k+n));return o};
+/* Read every row of a query, 1000 at a time (the database never sends more than 1000 in one go) */
+async function restAll(path){let all=[],off=0;for(;;){const r=await rest('GET',`${path}&limit=1000&offset=${off}`)||[];all=all.concat(r);if(r.length<1000)return all;off+=1000}}
+async function rowsByIds(ids){const out=[];for(const c of chunks(ids,IDS_CHUNK))out.push(...(await rest('GET',`ideas?select=${IDEA_COLS}&id=in.(${c.join(',')})`)||[]));return out}
+async function sugsFor(ids){const out=[];for(const c of chunks(ids,IDS_CHUNK))out.push(...await restAll(`suggestions?select=id,idea_id,author_name,body,status,created_at&idea_id=in.(${c.join(',')})&order=created_at.asc`));return out}
+/* Turn database rows into ideas and put them in the cache (keeping what we already know about each) */
+async function mergeRows(rows,withSugs=true){
+ rows=(rows||[]).filter(Boolean);if(!rows.length)return [];
+ const byIdea=withSugs?grp(await sugsFor(rows.map(r=>r.id)),'idea_id'):{};
+ const old=new Map(S.ideas.map(x=>[x.id,x])),out=[];
+ rows.forEach(r=>{const had=old.get(r.id),o=had||{},own=mineSet.has(r.id),v=S.me.votes[r.id],rc=S.me.reacts[r.id]||0;
+  const sg=withSugs?(byIdea[r.id]||[]):null;
+  const i=Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,official:!!r.official,madeTs:r.made_at?Date.parse(r.made_at):0,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
+   created:Date.parse(r.created_at),yes:r.yes_count-(v==='yes'?1:0),no:r.no_count-(v==='no'?1:0),likes:r.like_count-(rc===1?1:0),dislikes:r.dislike_count-(rc===-1?1:0),w7:o.w7||0,
+   comments:sg?sg.map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})):(o.comments||[]),
+   history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:o.similarTo||[],diff:o.diff||''});
+  if(!had)S.ideas.push(i);out.push(i)});
+ return out}
+async function pageRows(tab,from,n){return await rest('GET',`ideas?select=${IDEA_COLS}&${PG_Q[tab]}&limit=${n}&offset=${from}`)||[]}
+function notePage(tab,rows,asked){const p=PG[tab];p.n+=rows.length;p.done=rows.length<asked;if(rows.length){const last=rows[rows.length-1];p.edge=tab==='new'?Date.parse(last.created_at):tab==='top'?last.yes_count:Date.parse(last.made_at)}}
 async function liveLoad(){
- const [rows,sugs]=await Promise.all([rest('GET',`ideas?select=${IDEA_COLS}&order=created_at.desc&limit=1000`),rest('GET','suggestions?select=id,idea_id,author_name,body,status,created_at&order=created_at.asc&limit=5000')]);
  let mine=[],votes=[],reacts=[];
- if(sess){[mine,votes,reacts]=await Promise.all([rest('POST','rpc/my_idea_ids',{}),rest('GET','votes?select=idea_id,value'),rest('GET','reactions?select=idea_id,value')]);S.me.token=sess.uid}
- const mineSet=new Set(mine||[]),old=new Map(S.ideas.map(x=>[x.id,x]));
+ if(sess){[mine,votes,reacts]=await Promise.all([rest('POST','rpc/my_idea_ids',{}),restAll('votes?select=idea_id,value&order=idea_id'),restAll('reactions?select=idea_id,value&order=idea_id')]);S.me.token=sess.uid}
+ mineSet=new Set(mine||[]);
  S.me.votes={};(votes||[]).forEach(v=>{S.me.votes[v.idea_id]=v.value});
  S.me.reacts={};(reacts||[]).forEach(v=>{S.me.reacts[v.idea_id]=v.value});
- const byIdea={};(sugs||[]).forEach(s=>{(byIdea[s.idea_id]||(byIdea[s.idea_id]=[])).push(s)});
- S.ideas=(rows||[]).map(r=>{const o=old.get(r.id)||{},own=mineSet.has(r.id),v=S.me.votes[r.id],rc=S.me.reacts[r.id]||0;
-  return Object.assign(o,{id:r.id,live:true,title:r.title,desc:r.description,official:!!r.official,madeTs:r.made_at?Date.parse(r.made_at):0,img:r.image_url||'',imgs:r.images&&r.images.length?r.images:(r.image_url?[r.image_url]:[]),author:r.author_name,owner:own?S.me.token:null,key:S.me.keys[r.id]||o.key||'',
-   created:Date.parse(r.created_at),yes:r.yes_count-(v==='yes'?1:0),no:r.no_count-(v==='no'?1:0),likes:r.like_count-(rc===1?1:0),dislikes:r.dislike_count-(rc===-1?1:0),w7:o.w7||0,
-   comments:(byIdea[r.id]||[]).map(s=>({id:s.id,author:s.author_name,by:(s.status==='pending'&&!own)?S.me.token:null,text:s.body,created:Date.parse(s.created_at),adopted:s.status==='adopted',dismissed:s.status==='dismissed'})),
-   history:o.history||[],status:r.made_at?(o.status||'private'):'open',product:o.product||null,edited:!!r.edited_at,similarTo:o.similarTo||[],diff:o.diff||''})});
+ /* Each list reloads as far as the person had already scrolled */
+ const want={};Object.keys(PG).forEach(t=>{want[t]=Math.max(PAGE,PG[t].n)});
+ const [pn,pt,pm,stats]=await Promise.all([pageRows('new',0,want.new),pageRows('top',0,want.top),pageRows('made',0,want.made),rest('POST','rpc/site_stats',{}).catch(()=>null)]);
+ const got=new Set([...pn,...pt,...pm].map(r=>r.id));
+ const extra=[...new Set([...mineSet,...Object.keys(S.me.votes)])].filter(id=>!got.has(id));
+ const ex=extra.length?await rowsByIds(extra):[];
+ /* Start the cache again from what the database has now (removed ideas disappear), keeping ideas still being saved */
+ const all=[...pn,...pt,...pm,...ex],seen=new Set(),uniq=all.filter(r=>!seen.has(r.id)&&seen.add(r.id));
+ S.ideas=S.ideas.filter(i=>seen.has(i.id));
+ await mergeRows(uniq);
+ Object.keys(PG).forEach(t=>{PG[t]={n:0,done:false,edge:null}});notePage('new',pn,want.new);notePage('top',pt,want.top);notePage('made',pm,want.made);
+ STATS=stats;
+ const myIds=[...mineSet];RANKS=myIds.length?(await rest('POST','rpc/idea_ranks',{p_ids:myIds}).catch(()=>null))||{}:{};
  S.me.claimed=S.me.claimed.filter(id=>mineSet.has(id));
  await liveLoadFac();
  liveAt=Date.now();save();
 }
+/* Next page of one list, when the person scrolls to its end */
+let pgBusy=null;
+function loadMore(tab){if(!LIVE||PG[tab].done)return Promise.resolve(false);
+ return pgBusy||(pgBusy=(async()=>{try{const rows=await pageRows(tab,PG[tab].n,PAGE);await mergeRows(rows);notePage(tab,rows,PAGE);if(rows.length){applyFac();save()}return rows.length>0}catch(e){console.warn('tamanna page',e);return false}finally{pgBusy=null}})())}
+/* One idea that isn't loaded yet (a shared link, a similar idea) */
+async function fetchIdea(id){if(!LIVE||!/^[0-9a-f-]{36}$/i.test(id))return null;try{const r=await rowsByIds([id]);const [i]=await mergeRows(r);if(i){applyFac();save()}return i||null}catch(e){return null}}
+/* Ideas whose words match the draft, so the duplicate check covers every idea, not only the loaded ones */
+let simReq=null,simKey='';
+function fetchSimilar(title,desc){if(!LIVE)return Promise.resolve();
+ const w=[...new Set(tok(title+' '+desc))].sort((a,b)=>b.length-a.length).slice(0,8),k=w.join(' ');if(!w.length||k===simKey)return simReq||Promise.resolve();simKey=k;
+ /* Letters that are written several ways match any form; "*" = anything before or after */
+ const pat=x=>'*'+x.replace(/[اأإآ]/g,'_').replace(/[هة]/g,'_').replace(/[يى]/g,'_')+'*';
+ const or=w.flatMap(x=>[`title.ilike.${pat(x)}`,`description.ilike.${pat(x)}`]).join(',');
+ return simReq=rest('GET',`ideas?select=${IDEA_COLS}&or=(${encodeURIComponent(or)})&order=yes_count.desc&limit=60`).then(async r=>{await mergeRows(r);applyFac()}).catch(e=>console.warn('tamanna similar',e)).finally(()=>{simReq=null})}
 async function liveRefresh(){try{await liveLoad();if(!UI.editing&&!UI.composeOpen)render();else updateBadges();if(location.hash.startsWith('#idea-')&&$('#modal').hidden)route()}catch(e){console.warn('tamanna load',e);if(!S.ideas.length)toast(T('netErr'))}}
 /* Image: already shrunk to ≤900px JPEG in the browser; stored under the poster's own folder, then linked to the idea */
 async function uploadImg(id,dataUrl,k){const at=await token(),blob=await (await fetch(dataUrl)).blob(),path=`${sess.uid}/${id}${k===undefined?'':'-'+k}.jpg`;
@@ -1882,15 +1959,20 @@ async function dbDel(id){try{await rest('DELETE','ideas?id=eq.'+id);if(sess){con
 async function dbClaim(k,m){m.textContent='…';try{const id=await rest('POST','rpc/claim_idea',{p_key:k});if(!id){m.textContent=T('badKey');return}S.me.keys[id]=k;await liveLoad();m.textContent=T('recovered');renderView();updateBadges()}catch(e){m.textContent=T('netErr')}}
 /* ---- factories: profiles, makes, notes, invites, private messages ---- */
 const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).push(x)});return m};
+/* Factory data is read in full (page by page past 1000 rows), then attached to whichever ideas are loaded.
+   When more ideas load later, applyFac() attaches the same data again without asking the database. */
+let FACDATA=null;
 async function liveLoadFac(){
- const [facs,makes,notes]=await Promise.all([rest('GET','factories?select=handle,name,country,website&limit=2000'),rest('GET','makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc&limit=5000'),rest('GET','factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&limit=5000')]);
+ const [facs,makes,notes]=await Promise.all([restAll('factories?select=handle,name,country,website&order=handle'),restAll('makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc,id.asc'),restAll('factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&order=idea_id,handle')]);
  FACTORIES.length=0;(facs||[]).forEach(f=>FACTORIES.push([f.handle,f.name]));
  let det=[],invs=[],thr=[],msgs=[];FAC=null;
  OFFICIAL=false;
  if(sess){const me=await rest('POST','rpc/my_factory',{});FAC=(me&&me[0])||null;if(FAC)S.me.factory=FAC.name;
   try{OFFICIAL=!!(await rest('POST','rpc/is_official',{}))}catch(e){}
-  [det,invs,thr]=await Promise.all([rest('POST','rpc/my_make_details',{}),rest('GET','invites?select=idea_id,handle'),rest('GET','threads?select=id,idea_id,handle,factory_name,blocked,created_at')]);
-  if((thr||[]).length)msgs=await rest('GET','messages?select=id,thread_id,sender,body,created_at&order=created_at.asc&limit=10000')}
+  [det,invs,thr]=await Promise.all([rest('POST','rpc/my_make_details',{}),restAll('invites?select=idea_id,handle&order=idea_id,handle'),restAll('threads?select=id,idea_id,handle,factory_name,blocked,created_at&order=created_at,id')]);
+  if((thr||[]).length)msgs=await restAll('messages?select=id,thread_id,sender,body,created_at&order=created_at.asc,id.asc')}
+ FACDATA={det,makes,notes,invs,thr,msgs};applyFac()}
+function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs}=FACDATA;
  const D=new Map((det||[]).map(d=>[d.id,d])),M=grp(makes,'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id');
  S.me.facPriv=[];
  S.ideas.forEach(i=>{
