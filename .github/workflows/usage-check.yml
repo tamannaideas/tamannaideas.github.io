@@ -1,0 +1,37 @@
+# Early warning: every day GitHub checks Tamanna's free limits.
+# If anything reaches 70% of its limit, this run FAILS and GitHub emails the account owner,
+# so there is time to act long before the site breaks. Each run's numbers are in its summary.
+name: usage-check
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read usage and compare with free limits
+        run: |
+          S=$(curl -fsS -X POST "https://twouinzecjvfrxbgycrb.supabase.co/rest/v1/rpc/usage_stats" \
+                -H "apikey: sb_publishable_HW-w2G9UpVHaBs2n2xhFXg_odjjPt4i" -H "Content-Type: application/json" -d '{}')
+          echo "$S" | jq .
+          # name | value | free limit | what to do when it is close
+          rows=$(echo "$S" | jq -r '
+            [ ["Emails sent today (Gmail ~500/day)",              .emails_24h, 500,   "move email sending to a mail service (needs a domain)"],
+              ["Emails in the last hour (Supabase 30/hour)",      .emails_1h,  30,    "raise the hourly email limit in Supabase > Auth > Rate limits"],
+              ["Monthly active users (Supabase free 50,000)",     .mau,        50000, "Supabase Pro plan (~25 USD/month)"],
+              ["Database size MB (Supabase free 500)",            .db_mb,      500,   "clean old data or Supabase Pro plan"],
+              ["Image storage MB (Supabase free 1,000)",          .storage_mb, 1000,  "shrink images more or Supabase Pro plan"]
+            ] | .[] | @tsv')
+          warn=0
+          { echo "## Tamanna usage $(date -u +%F)"; echo "| Item | Now | Free limit | Used |"; echo "|---|---|---|---|"; } >> "$GITHUB_STEP_SUMMARY"
+          while IFS=$'\t' read -r name val lim fix; do
+            pct=$(awk -v v="$val" -v l="$lim" 'BEGIN{printf "%d", (v*100)/l}')
+            echo "| $name | $val | $lim | $pct% |" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$pct" -ge 70 ]; then
+              echo "::error title=Tamanna limit warning::$name is at $pct% ($val of $lim). Next step: $fix"
+              warn=1
+            fi
+          done <<< "$rows"
+          echo "Ideas: $(echo "$S" | jq .ideas) (new today: $(echo "$S" | jq .ideas_24h)), saved accounts: $(echo "$S" | jq .saved_accounts)" >> "$GITHUB_STEP_SUMMARY"
+          exit $warn
