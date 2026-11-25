@@ -341,6 +341,7 @@ body.live .giftf,body.live .fld:has(#mk-c),body.live .fld:has(#mk-f),body.live d
 .fac-tools{display:flex;gap:8px;margin-inline-start:auto;flex-wrap:wrap;align-items:center}
 .seg{display:inline-flex;background:var(--surface-2);border-radius:11px;padding:3px}
 .seg button{padding:7px 13px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--muted)}
+.wl-tabs{display:flex;margin-block:10px 4px}.wl-tabs button{flex:1}
 .seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .srch{position:relative}
 .srch svg{position:absolute;top:50%;transform:translateY(-50%);inset-inline-start:10px;color:var(--muted)}
@@ -661,7 +662,7 @@ manufactured:'تم التنفيذ وقابلة للشراء',verified:'منتج 
 toastWish:'أُضيفت إلى قائمة أمنياتك. سنخبرك عند تصنيعها.',toastPosted:'نُشرت فكرتك في "أفكار جديدة"',toastEdited:'حُفظ التعديل',toastAdopted:'اعتُمد الاقتراح وأُضيف لسجل الفكرة',storageFull:'مساحة التخزين في المتصفح ممتلئة. جرّب صورة أصغر.',
 keyTitle:'مفتاح فكرتك',keyBody:'احتفظ بهذا الرمز. إذا غيّرت جهازك أو مسحت بيانات المتصفح، أدخله في أسفل صفحة «أفكاري» لتستعيد صلاحية تحرير فكرتك، دون الحاجة لحساب. وستجده دائماً في بطاقة فكرتك هناك.',recoverHint:'نشرت فكرة من جهاز آخر أو مسحت بيانات المتصفح؟ أدخل مفتاحها هنا لتظهر في «أفكاري» وتستعيد صلاحية تحريرها.',copy:'نسخ',copied:'نُسخ ✓',gotIt:'تم',
 more:'المزيد',language:'اللغة',displayName:'اسمك الافتراضي',myIdeas:'أفكاري ومفاتيحها',noMine:'لم تنشر أي فكرة بعد.',recover:'استرجاع فكرة بالمفتاح',recoverBtn:'استرجاع',recovered:'تم. يمكنك الآن تحرير فكرتك من هذا الجهاز.',badKey:'المفتاح غير صحيح. تأكد من الأحرف وحاول مجدداً.',reset:'إعادة البيانات التجريبية',resetArm:'اضغط مرة أخرى للتأكيد',
-wlSub:(a,b)=>`${a} منتجات تتمناها · ${b} متوفرة الآن`,availNow:n=>`${n} من أمنياتك أصبحت متوفرة للشراء!`,wishEmpty:'قائمتك فارغة. اضغط "نعم، أتمنى" على أي فكرة لتُحفظ هنا، وسنخبرك عندما يصنعها مصنع.',browse:'تصفّح الأفكار',
+likedTab:'أعجبني',likedSub:'أفكار أعجبتك ولم تضفها لأمنياتك بعد. اضغط "نعم، أتمنى" لتنقلها لأمنياتك.',likedEmpty:'هنا تظهر الأفكار التي تضغط عليها "أعجبني"، لترجع لها متى شئت.',wlSub:(a,b)=>`${a} منتجات تتمناها · ${b} متوفرة الآن`,availNow:n=>`${n} من أمنياتك أصبحت متوفرة للشراء!`,wishEmpty:'قائمتك فارغة. اضغط "نعم، أتمنى" على أي فكرة لتُحفظ هنا، وسنخبرك عندما يصنعها مصنع.',browse:'تصفّح الأفكار',
 facTitle:'لوحة المصنع',facSub:'رتّب الأفكار حسب الطلب الحقيقي من الناس',search:'ابحث في الأفكار…',colIdea:'الفكرة',colWish:'الأمنيات',colYes:'نسبة نعم',colVel:'نمو 7 أيام',colSug:'اقتراحات',colStatus:'الحالة',stOpen:'مفتوحة',stPub:'معروضة للبيع',stPriv:'أبلغتَ صاحبها',
 kIdeas:'فكرة منشورة',kOpen:'بانتظار مصنع',kWish:'أمنية إجمالاً',kAvg:'متوسط نسبة نعم',pickRow:'اختر فكرة من الجدول لعرض تفاصيلها هنا.',noRes:'لا نتائج مطابقة.',topSugs:'أبرز اقتراحات المجتمع',likesRatio:'نسبة الإعجاب',
 make:'سأصنع هذه الفكرة',tierPub:'السوق العام · عمولة 5%',tierPubD:'اعرض المنتج للجميع، واحصل على شارة "منتج فكرة أصلية موثّق".',notifyCount:'سيصل إشعار فوري إلى {n} شخصاً تمنّوا هذا المنتج',tierFree:'مجاني · خاص',tierFreeD:'تبيع المنتج بنفسك خارج تَمَنّى ولن يُعرض هنا. يصل لصاحب الفكرة إشعار خاص، ويمكنك إهداؤه نسخة إن أردت.',
@@ -713,7 +714,7 @@ manufactured:'Manufactured & available to buy',verified:'Verified Original Idea 
 toastWish:'Added to your Wishlist. We’ll tell you when it’s made.',toastPosted:'Your idea is live in New Ideas',toastEdited:'Changes saved',toastAdopted:'Suggestion adopted and added to the idea’s history',storageFull:'Browser storage is full. Try a smaller image.',
 keyTitle:'Your idea key',keyBody:'Keep this code. If you switch devices or clear your browser, enter it at the bottom of My Ideas to get edit access back. No account needed. You’ll always find it on your idea’s card there.',recoverHint:'Posted from another device or cleared your browser? Enter the idea’s key here to bring it back to My Ideas and edit it again.',copy:'Copy',copied:'Copied ✓',gotIt:'Got it',
 more:'More',language:'Language',displayName:'Default name',myIdeas:'My ideas and their keys',noMine:'You haven’t posted an idea yet.',recover:'Recover an idea with its key',recoverBtn:'Recover',recovered:'Done. You can edit your idea from this device now.',badKey:'That key doesn’t match. Check the characters and try again.',reset:'Reset demo data',resetArm:'Tap again to confirm',
-wlSub:(a,b)=>`${a} products you wish for · ${b} available now`,availNow:n=>`${n} of your wishes can be bought now!`,wishEmpty:'Your Wishlist is empty. Tap “Yes, I wish” on any idea to save it here, and we’ll tell you when a factory makes it.',browse:'Browse ideas',
+likedTab:'Liked',likedSub:'Ideas you liked but haven’t added to your Wishlist yet. Tap “Yes, I wish” to move one there.',likedEmpty:'Ideas you tap “Like” on show up here, so you can come back to them any time.',wlSub:(a,b)=>`${a} products you wish for · ${b} available now`,availNow:n=>`${n} of your wishes can be bought now!`,wishEmpty:'Your Wishlist is empty. Tap “Yes, I wish” on any idea to save it here, and we’ll tell you when a factory makes it.',browse:'Browse ideas',
 facTitle:'Factory dashboard',facSub:'Sort ideas by real public demand',search:'Search ideas…',colIdea:'Idea',colWish:'Wishes',colYes:'Yes rate',colVel:'7-day growth',colSug:'Suggestions',colStatus:'Status',stOpen:'Open',stPub:'On sale',stPriv:'Creator notified',
 kIdeas:'ideas posted',kOpen:'awaiting a factory',kWish:'wishes in total',kAvg:'average yes rate',pickRow:'Pick an idea from the table to see its details here.',noRes:'No matching ideas.',topSugs:'Top community suggestions',likesRatio:'Like ratio',
 make:'I’ll manufacture this',tierPub:'Public marketplace · 5% commission',tierPubD:'List it for everyone and get the “Verified Original Idea Product” badge.',notifyCount:'{n} people who wished for it get notified instantly',tierFree:'Free · private',tierFreeD:'You sell the product yourself outside Tamanna; it isn’t listed here. The creator gets a private notice, and you can gift them one if you like.',
@@ -765,7 +766,7 @@ manufactured:'已量产,可购买',verified:'认证原创创意产品',openStatu
 toastWish:'已加入心愿单,量产时会通知你。',toastPosted:'你的创意已发布在"最新创意"',toastEdited:'修改已保存',toastAdopted:'建议已采纳并记入创意历史',storageFull:'浏览器存储已满,请换一张更小的图片。',
 keyTitle:'你的创意密钥',keyBody:'请保存此代码。更换设备或清除浏览器数据后,在"我的创意"页面底部输入即可恢复编辑权限,无需账号。你也随时可以在那里的创意卡片中找到它。',recoverHint:'在其他设备发布过创意或清除了浏览器数据?在此输入创意密钥,即可将其找回到"我的创意"并重新编辑。',copy:'复制',copied:'已复制 ✓',gotIt:'知道了',
 more:'更多',language:'语言',myIdeas:'我的创意及密钥',noMine:'你还没有发布创意。',recover:'用密钥恢复创意',recoverBtn:'恢复',recovered:'完成,现在可以在此设备上编辑你的创意。',badKey:'密钥不匹配,请检查字符后重试。',reset:'重置演示数据',resetArm:'再点一次确认',
-wlSub:(a,b)=>`你期待的产品 ${a} 个 · 现可购买 ${b} 个`,availNow:n=>`你的心愿中有 ${n} 个现在可以购买了!`,wishEmpty:'心愿单是空的。在任意创意上点"是,我希望"即可保存到这里,工厂生产时我们会通知你。',browse:'浏览创意',
+likedTab:'赞过的',likedSub:'你赞过但还没加入心愿单的创意。点"是,我希望"即可移入心愿单。',likedEmpty:'你点过"赞"的创意会出现在这里,方便随时回来查看。',wlSub:(a,b)=>`你期待的产品 ${a} 个 · 现可购买 ${b} 个`,availNow:n=>`你的心愿中有 ${n} 个现在可以购买了!`,wishEmpty:'心愿单是空的。在任意创意上点"是,我希望"即可保存到这里,工厂生产时我们会通知你。',browse:'浏览创意',
 facTitle:'工厂面板',facSub:'按真实需求为创意排序',search:'搜索创意…',colIdea:'创意',colWish:'心愿数',colYes:'支持率',colVel:'7天增长',colSug:'建议',colStatus:'状态',stOpen:'待生产',stPub:'在售',stPriv:'已通知作者',
 kIdeas:'已发布创意',kOpen:'等待工厂',kWish:'心愿总数',kAvg:'平均支持率',pickRow:'从表格中选择一个创意查看详情。',noRes:'没有匹配的创意。',topSugs:'社区热门建议',likesRatio:'好评率',
 make:'我来生产',tierPub:'公开市场 · 5% 佣金',tierPubD:'向所有人公开销售,并获得"认证原创创意产品"徽章。',notifyCount:'{n} 位期待此产品的用户将立即收到通知',tierFree:'免费 · 私下',tierFreeD:'你在 Tamanna 以外自行销售,产品不会在这里展示。创意作者会收到私下通知,你也可以选择赠送一件。',
@@ -817,7 +818,7 @@ manufactured:'Üretildi, satın alınabilir',verified:'Onaylı Orijinal Fikir Ü
 toastWish:'İstek listene eklendi. Üretildiğinde haber vereceğiz.',toastPosted:'Fikrin Yeni Fikirler’de yayında',toastEdited:'Değişiklikler kaydedildi',toastAdopted:'Öneri benimsendi ve fikrin geçmişine eklendi',storageFull:'Tarayıcı depolama alanı dolu. Daha küçük bir görsel dene.',
 keyTitle:'Fikir anahtarın',keyBody:'Bu kodu sakla. Cihaz değiştirirsen veya tarayıcı verilerini silersen, “Fikirlerim” sayfasının altına girerek düzenleme yetkini geri alırsın. Hesap gerekmez. Anahtarı her zaman oradaki fikir kartında bulabilirsin.',recoverHint:'Başka bir cihazdan mı paylaştın ya da tarayıcı verilerini mi sildin? Fikrin anahtarını buraya gir; fikir “Fikirlerim”e geri gelir ve yeniden düzenleyebilirsin.',copy:'Kopyala',copied:'Kopyalandı ✓',gotIt:'Tamam',
 more:'Diğer',language:'Dil',myIdeas:'Fikirlerim ve anahtarları',noMine:'Henüz bir fikir paylaşmadın.',recover:'Anahtarla fikri geri al',recoverBtn:'Geri al',recovered:'Tamam. Artık fikrini bu cihazdan düzenleyebilirsin.',badKey:'Anahtar eşleşmedi. Karakterleri kontrol edip tekrar dene.',reset:'Demo verilerini sıfırla',resetArm:'Onaylamak için tekrar dokun',
-wlSub:(a,b)=>`İstediğin ${a} ürün · ${b} tanesi şimdi satışta`,availNow:n=>`İsteklerinden ${n} tanesi artık satın alınabilir!`,wishEmpty:'İstek listen boş. Bir fikirde "Evet, isterdim"e dokun; burada saklanır ve bir fabrika ürettiğinde haber veririz.',browse:'Fikirlere göz at',
+likedTab:'Beğendiklerim',likedSub:'Beğendiğin ama henüz istek listene eklemediğin fikirler. Taşımak için "Evet, isterdim"e dokun.',likedEmpty:'"Beğen"e dokunduğun fikirler burada görünür, istediğin zaman geri dönebilirsin.',wlSub:(a,b)=>`İstediğin ${a} ürün · ${b} tanesi şimdi satışta`,availNow:n=>`İsteklerinden ${n} tanesi artık satın alınabilir!`,wishEmpty:'İstek listen boş. Bir fikirde "Evet, isterdim"e dokun; burada saklanır ve bir fabrika ürettiğinde haber veririz.',browse:'Fikirlere göz at',
 facTitle:'Fabrika paneli',facSub:'Fikirleri gerçek talebe göre sırala',search:'Fikir ara…',colIdea:'Fikir',colWish:'İstek',colYes:'Evet oranı',colVel:'7 günlük artış',colSug:'Öneri',colStatus:'Durum',stOpen:'Açık',stPub:'Satışta',stPriv:'Sahibine bildirildi',
 kIdeas:'paylaşılan fikir',kOpen:'fabrika bekliyor',kWish:'toplam istek',kAvg:'ortalama evet oranı',pickRow:'Ayrıntılar için tablodan bir fikir seç.',noRes:'Eşleşen fikir yok.',topSugs:'Öne çıkan topluluk önerileri',likesRatio:'Beğeni oranı',
 make:'Bunu ben üreteceğim',tierPub:'Açık pazar · %5 komisyon',tierPubD:'Ürünü herkese sat ve "Onaylı Orijinal Fikir Ürünü" rozetini al.',notifyCount:'Bu ürünü isteyen {n} kişiye anında bildirim gider',tierFree:'Ücretsiz · özel',tierFreeD:'Ürünü Tamanna dışında kendin satarsın; burada listelenmez. Fikir sahibine özel bir bildirim gider ve istersen ona bir tane hediye edebilirsin.',
@@ -1089,6 +1090,8 @@ function penalize(h){const s=sellerOf(h),t=now(),n=strikes90(h);
 function enforce(){const t=now();let n=0;S.orders.forEach(o=>{if(o.status==='placed'&&o.shipBy&&t>o.shipBy){o.status='refunded';o.refundAt=t;n++;if(o.fac){const s=sellerOf(o.fac);s.late++;s.strikes.push(t);penalize(o.fac)}}});syncAll();if(n)save();return n}
 const remTxt=ms=>ms<DAY?T('remH')(fmt(Math.max(1,Math.ceil(ms/36e5)))):T('remD')(fmt(Math.ceil(ms/DAY)));
 const wishIds=()=>Object.keys(S.me.votes).filter(k=>S.me.votes[k]==='yes'&&byId(k));
+/* ideas I liked but haven't added to my wishlist yet */
+const likedIds=()=>Object.keys(S.me.reacts).filter(k=>S.me.reacts[k]===1&&S.me.votes[k]!=='yes'&&byId(k));
 const unseenAvail=()=>wishIds().filter(k=>isPublic(byId(k))&&!S.me.seenAvail.includes(k)).length;
 
 /* ---------- chrome ---------- */
@@ -1280,9 +1283,16 @@ updateSimilar.after=paintSimilar;
 
 /* ---------- wishlist ---------- */
 function renderWish(){
+ const lk=likedIds(),tabs=`<div class="seg wl-tabs" role="group"><button data-act="wl-tab" data-v="wish" class="${UI.wlTab!=='liked'?'on':''}">⭐ ${T('navWishL')} <span class="tnum">${fmt(wishIds().length)}</span></button><button data-act="wl-tab" data-v="liked" class="${UI.wlTab==='liked'?'on':''}">👍 ${T('likedTab')} <span class="tnum">${fmt(lk.length)}</span></button></div>`;
+ if(UI.wlTab==='liked'){
+  const l=lk.map(byId).sort((a,b)=>b.created-a.created);
+  $('#view').innerHTML=`<div class="col"><div class="wl-h"><h2>${T('navWishL')}</h2>${tabs}<p class="muted">${T('likedSub')}</p></div>
+  ${l.length?`<div class="feed">${l.map(i=>`<div class="wish-item" data-id="${i.id}">${cardHTML(i)}</div>`).join('')}</div>`:`<div class="empty-box">👍<p>${T('likedEmpty')}</p><button class="btn pri" data-act="nav" data-v="feed">${T('browse')}</button></div>`}</div>`;
+  return;
+ }
  const ids=wishIds(),list=ids.map(byId).sort((a,b)=>(isPublic(b)-isPublic(a))||(yesN(b)-yesN(a)));
  const av=list.filter(isPublic).length,un=unseenAvail();
- $('#view').innerHTML=`<div class="col"><div class="wl-h"><h2>${T('navWishL')}</h2><p class="muted tnum">${T('wlSub')(fmt(list.length),fmt(av))}</p></div>${acctBoxHTML()}${buyerOrdersHTML()}
+ $('#view').innerHTML=`<div class="col"><div class="wl-h"><h2>${T('navWishL')}</h2>${tabs}<p class="muted tnum">${T('wlSub')(fmt(list.length),fmt(av))}</p></div>${acctBoxHTML()}${buyerOrdersHTML()}
  ${av?`<div class="avail">${I.bell}<span>${T('availNow')(fmt(av))}</span></div>`:''}
  ${list.length?`<div class="feed">${list.map(i=>`<div class="wish-item" data-id="${i.id}">${pledgeHTML(i)}${cardHTML(i)}</div>`).join('')}</div>`:`<div class="empty-box">${I.star}<p>${T('wishEmpty')}</p><button class="btn pri" data-act="nav" data-v="feed">${T('browse')}</button></div>`}</div>`;
  if(un){S.me.seenAvail=Array.from(new Set(S.me.seenAvail.concat(ids.filter(k=>isPublic(byId(k))))));save();setTimeout(updateBadges,1500)}
@@ -1665,8 +1675,9 @@ document.addEventListener('click',async e=>{
  /* Send the draft to the similar idea's creator as a suggestion: open that idea with the text ready to edit and send */
  case 'sim-sug':{const p=byId(el.dataset.pid);if(!p)break;UI.openC.add(p.id);openIdea(p);
   setTimeout(()=>{const inp=document.getElementById('s-'+p.id);if(!inp)return;const t=[UI.draft.title.trim(),UI.draft.desc.trim()].filter(Boolean).join(' — ');inp.value=t.slice(0,+inp.maxLength>0?+inp.maxLength:300);inp.focus();inp.scrollIntoView({block:'center'})},350);break}
- case 'vote':{if(!i)break;const v=el.dataset.v,prev=vote(i),r=el.getBoundingClientRect();if(prev===v)delete S.me.votes[id];else S.me.votes[id]=v;if(LIVE)dbVote(id,S.me.votes[id]);save();refreshCard(id);updateBadges();if(v==='yes'&&prev!=='yes'){toast(T('toastWish'));fly(r)}if(UI.view==='wishlist'&&v!=='yes'&&!host.closest('.m-card'))renderView();break}
- case 'react':{if(!i)break;const v=+el.dataset.v;S.me.reacts[id]=react(i)===v?0:v;if(LIVE)dbReact(id,S.me.reacts[id]);save();refreshCard(id);if(S.me.reacts[id])document.querySelectorAll(`.card[data-id="${id}"] .ab.${v===1?'like':'dis'}`).forEach(b=>b.classList.add('pop'));break}
+ case 'vote':{if(!i)break;const v=el.dataset.v,prev=vote(i),r=el.getBoundingClientRect();if(prev===v)delete S.me.votes[id];else S.me.votes[id]=v;if(LIVE)dbVote(id,S.me.votes[id]);save();refreshCard(id);updateBadges();if(v==='yes'&&prev!=='yes'){toast(T('toastWish'));fly(r)}if(UI.view==='wishlist'&&(v!=='yes'||UI.wlTab==='liked')&&!host.closest('.m-card'))renderView();break}
+ case 'react':{if(!i)break;const v=+el.dataset.v;S.me.reacts[id]=react(i)===v?0:v;if(LIVE)dbReact(id,S.me.reacts[id]);save();refreshCard(id);if(S.me.reacts[id])document.querySelectorAll(`.card[data-id="${id}"] .ab.${v===1?'like':'dis'}`).forEach(b=>b.classList.add('pop'));if(UI.view==='wishlist'&&UI.wlTab==='liked'&&S.me.reacts[id]!==1&&!host.closest('.m-card'))renderView();break}
+ case 'wl-tab':UI.wlTab=el.dataset.v;renderWish();break;
  case 'sug':{if(!i)break;UI.openC.has(id)?UI.openC.delete(id):UI.openC.add(id);refreshCard(id);if(UI.openC.has(id)){const inp=document.getElementById('s-'+id);if(inp&&!('ontouchstart' in window))inp.focus({preventScroll:true})}break}
  case 'adopt':{if(!i||!isOwner(i))break;const c=i.comments.find(x=>x.id===el.dataset.c);if(!c)break;c.adopted=true;if(LIVE)dbSugStatus(c.id,'adopted');i.history.push({at:Date.now(),note:{k:'hAdopt',p:c.author||'—'}});save();refreshCard(id);toast(T('toastPublished'));break}
  case 'edit':if(i&&canEdit(i)){UI.editing=id;refreshCard(id);const t=document.getElementById('e-t-'+id);if(t)t.focus()}break;
@@ -1944,7 +1955,7 @@ async function liveLoad(){
  /* paid rises of the last 30 days (future ones too: each counts once its time comes) */
  RISEMAP={};(rs||[]).forEach(r=>{(RISEMAP[r.idea_id]||(RISEMAP[r.idea_id]=[])).push(Date.parse(r.at))});
  const got=new Set([...pn,...pt,...pm].map(r=>r.id));
- const extra=[...new Set([...mineSet,...Object.keys(S.me.votes)])].filter(id=>!got.has(id));
+ const extra=[...new Set([...mineSet,...Object.keys(S.me.votes),...Object.keys(S.me.reacts).filter(k=>S.me.reacts[k]===1)])].filter(id=>!got.has(id));
  const ex=extra.length?await rowsByIds(extra):[];
  /* Start the cache again from what the database has now (removed ideas disappear), keeping ideas still being saved */
  const all=[...pn,...pt,...pm,...ex],seen=new Set(),uniq=all.filter(r=>!seen.has(r.id)&&seen.add(r.id));
