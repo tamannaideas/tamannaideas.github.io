@@ -34,4 +34,8 @@ jobs:
             fi
           done <<< "$rows"
           echo "Ideas: $(echo "$S" | jq .ideas) (new today: $(echo "$S" | jq .ideas_24h)), saved accounts: $(echo "$S" | jq .saved_accounts)" >> "$GITHUB_STEP_SUMMARY"
+          # the daily Tamanna Team idea comes from a prepared bank; warn a week before it runs out
+          q=$(echo "$S" | jq '.queue_left // 99')
+          echo "Daily-idea bank left: $q" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$q" -le 7 ]; then echo "::error title=Tamanna idea bank::Only $q daily ideas left. Ask Claude to add more to idea_queue."; warn=1; fi
           exit $warn
