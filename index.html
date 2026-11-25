@@ -342,6 +342,19 @@ body.live .giftf,body.live .fld:has(#mk-c),body.live .fld:has(#mk-f),body.live d
 .seg{display:inline-flex;background:var(--surface-2);border-radius:11px;padding:3px}
 .seg button{padding:7px 13px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--muted)}
 .wl-tabs{display:flex;margin-block:10px 4px}.wl-tabs button{flex:1}
+/* Buyer reviews */
+.stars{color:#E39B12;letter-spacing:1px}.stars .st-off{color:var(--muted);opacity:.35}
+.revs{display:flex;flex-direction:column;gap:10px;margin-block:14px}.revs h3{font-size:17px}
+.rev-g{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface)}
+.rev-gh{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.rev{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:8px}
+.rev-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px}
+.rev-t{white-space:pre-line;unicode-bidi:plaintext;text-align:start;font-size:14px;line-height:1.6}
+.rev-imgs{display:flex;gap:6px;flex-wrap:wrap}.rev-imgs img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.rate{display:flex;flex-direction:row-reverse;justify-content:flex-end;gap:2px}.rate input{position:absolute;opacity:0;pointer-events:none}
+.rate label{font-size:32px;line-height:1;color:var(--muted);opacity:.35;cursor:pointer;padding:2px}
+.rate input:checked~label,.rate label:hover,.rate label:hover~label{color:#E39B12;opacity:1}
+.rate input:focus-visible+label{outline:2px solid var(--fg);border-radius:6px}
 .seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .srch{position:relative}
 .srch svg{position:absolute;top:50%;transform:translateY(-50%);inset-inline-start:10px;color:var(--muted)}
@@ -1114,7 +1127,7 @@ function updateBadges(){const ib=inboxUnread();document.querySelectorAll('[data-
 /* Outside-made claims: the creator sees the factory's proof link and can report a fake claim, which reopens the idea. */
 function proofHTML(i){const p=i.product,ok=p&&p.proof&&/^https?:\/\/\S+\.\S+/i.test(p.proof);return `${ok?`<a class="link" href="${esc(p.proof)}" target="_blank" rel="noopener noreferrer nofollow">${T('viewProof')}</a>`:''}<button class="link" style="color:var(--dislike);font-size:13px" data-act="report-fake">${T('reportL')}</button>`}
 function sideHTML(i,own){
- if(isPublic(i)){const p=i.product,d=discOf(i);return `<button class="badge ver" data-act="story" title="${T('storyHint')}">${I.mark}<span>${T('verified')}</span>${I.open}</button>${d?`<button class="badge disc" data-act="buy">${I.tag}<span>${T('discBadge')(d.pct)} <small>· ${T('discUntil')(F().d.format(d.until))}</small></span></button>`:''}<button class="buy" data-act="buy">${I.cart}<span>${T('manufactured')}</span></button>${own&&giftOff(i)?`<button class="buy gift" data-act="buy" data-gift="1">${I.gift}<span>${T('useGift')}</span></button>`:''}<span class="price tnum">${money(p.price)}<small>+ ${money(p.shipping)} ${T('ship')}</small></span><span class="fac-name">${facLink(p.fac,p.factory)} · ${T('shipsIn')(offerDays(p))}</span>${liveOffers(i).length>1?`<span class="fac-name">${T('moreSellers')(fmt(liveOffers(i).length-1))}</span>`:''}`}
+ if(isPublic(i)){const p=i.product,d=discOf(i);return `<button class="badge ver" data-act="story" title="${T('storyHint')}">${I.mark}<span>${T('verified')}</span>${I.open}</button>${d?`<button class="badge disc" data-act="buy">${I.tag}<span>${T('discBadge')(d.pct)} <small>· ${T('discUntil')(F().d.format(d.until))}</small></span></button>`:''}<button class="buy" data-act="buy">${I.cart}<span>${T('manufactured')}</span></button>${own&&giftOff(i)?`<button class="buy gift" data-act="buy" data-gift="1">${I.gift}<span>${T('useGift')}</span></button>`:''}<span class="price tnum">${money(p.price)}<small>+ ${money(p.shipping)} ${T('ship')}</small></span><span class="fac-name">${facLink(p.fac,p.factory)} · ${T('shipsIn')(offerDays(p))}</span>${p.revN?`<button class="fac-name link" data-act="reviews" title="${T('revNote')}">${starsAvg(p.revAvg,p.revN)}</button>`:''}${liveOffers(i).length>1?`<span class="fac-name">${T('moreSellers')(fmt(liveOffers(i).length-1))}</span>`:''}`}
  if(i.status==='private'&&own){const p=i.product;return `<span class="only-you">${T('onlyYou')}</span><span class="badge priv">${I.factory}${T('privateBadge')}</span><span class="note">${(T('privDetail')||{})[p.mode==='gift'?'gift':'notify']}</span><span class="note muted">“${esc(tx(p.msg))}”</span><span class="fac-name">${esc(p.factory)}</span>${proofHTML(i)}${p.gift&&!p.gift.used?`<button class="buy gift" data-act="buy" data-gift="1">${I.gift}<span>${T('useGift')}</span></button>`:''}`}
  return `<span class="badge open">${i.status==='private'?T('outsidePub'):T('openStatus')}</span><span class="stat-mini"><b class="tnum">${fmt(yesN(i))}</b> ${T('wishers')}</span>`;
 }
@@ -1553,7 +1566,7 @@ const editableOffer=(i,oid)=>{const o=i&&offerById(i,oid);return o&&o.fac===myHa
 /* Platform commission on sales made on Tamanna (owner's decision: 5%) */
 const FEE=0.05;
 function updFee(){const p=parseFloat(($('#mk-p')||{}).value)||0,c=($('#mk-c')||{}).value||myCur(),f=$('#fee');if(f)f.innerHTML=T('feeL')(moneyIn(p*FEE,c),moneyIn(p*(1-FEE),c))}
-function offerRow(o,sel){const r=relOf(o.fac);return `<label class="pm offer"><input type="radio" name="offer" value="${o.id}" id="of-${o.id}"${sel?' checked':''}><span><span class="of-main"><b>${esc(o.factory)}</b><small>${T('shipsIn')(offerDays(o))}</small><small class="${r===null?'':r>=95?'rel':'rel-lo'}">${r===null?T('newSeller'):T('relL')(r)}</small></span><span class="of-price tnum">${money(o.price)}<small>+ ${money(o.shipping)}</small></span></span></label>`}
+function offerRow(o,sel){const r=relOf(o.fac);return `<label class="pm offer"><input type="radio" name="offer" value="${o.id}" id="of-${o.id}"${sel?' checked':''}><span><span class="of-main"><b>${esc(o.factory)}</b><small>${T('shipsIn')(offerDays(o))}</small><small class="${r===null?'':r>=95?'rel':'rel-lo'}">${r===null?T('newSeller'):T('relL')(r)}</small>${o.revN?`<small>${starsAvg(o.revAvg,o.revN)}</small>`:''}</span><span class="of-price tnum">${money(o.price)}<small>+ ${money(o.shipping)}</small></span></span></label>`}
 function buyHTML(i){const p=curOffer(i),live=liveOffers(i),pub=live.includes(p),d=pub?discO(p):null;return `${isPublic(i)?`<button class="badge ver" style="align-self:flex-start" data-act="story" data-pid="${i.id}" title="${T('storyHint')}">${I.mark}<span>${T('verified')}</span>${I.open}</button>`:''}<h2>${esc(tx(i.title))}</h2><p class="muted" style="margin-top:-8px">${esc(p.factory)} · ${money(p.price)}</p>
  <form data-form="buy" data-pid="${i.id}" class="edit">
  ${pub?`<fieldset class="pay"><legend>${T('chooseSeller')}</legend>${live.map(o=>offerRow(o,o===p)).join('')}</fieldset>`:''}
@@ -1586,7 +1599,7 @@ function similarTo(i,n){
   .sort((a,b)=>(b[1]-a[1])||(yesN(b[0])-yesN(a[0]))).slice(0,n||8).map(a=>a[0]);
 }
 function miniHTML(x){const d=isPublic(x)?discOf(x):null;return `<a class="mini" href="#idea-${x.id}"><span class="mini-img">${x.img?`<img src="${x.img}" alt="" loading="lazy" decoding="async">`:I.bulb}</span><b>${esc(tx(x.title))}</b><small class="tnum">${fmt(yesN(x))} ${T('wishers')}</small>${isPublic(x)?`<span class="badge ver">${I.check}${money(x.product.price)}</span>`:''}${d?`<span class="badge disc">${I.tag}${d.pct}%</span>`:''}</a>`}
-function ideaHTML(i){return `<div class="m-card">${cardHTML(i)}</div>${LIVE?badgeNoteHTML(i):''}<section class="sim"><h3>${T('simTitle')}</h3><div class="sim-row">${similarTo(i).map(miniHTML).join('')}</div></section>`}
+function ideaHTML(i){return `<div class="m-card">${cardHTML(i)}</div>${reviewsHTML(i)}${LIVE?badgeNoteHTML(i):''}<section class="sim"><h3>${T('simTitle')}</h3><div class="sim-row">${similarTo(i).map(miniHTML).join('')}</div></section>`}
 function openIdea(i){openModal(ideaHTML(i),'idea');$('.sheet').scrollTop=0}
 /* Two audiences, two explainers: visitors see what matters to them; factory details live inside Factory mode */
 function howHTML(fac){
@@ -1718,6 +1731,7 @@ document.addEventListener('click',async e=>{
  case 'inbox-all':UI.inboxIdea=null;renderInbox();break;
  case 'block':{const u=UI.thread,t2=byId(u.pid),th=t2&&findThread(t2,u.tid);if(th&&isOwner(t2)){th.blocked=!th.blocked;if(LIVE)dbRpc('set_thread_blocked',{p_thread:th.id,p_blocked:th.blocked});save();repaintChat()}break}
  case 'mine-sug':if(i){UI.openC.add(id);openIdeaId(id)}break;
+ case 'reviews':if(i){if(!host.closest('.m-card'))openIdeaId(id);setTimeout(()=>{const s=document.getElementById('revs');if(s)s.scrollIntoView({behavior:'smooth',block:'start'})},250)}break;
  case 'mine-edit':if(i&&isOwner(i)){UI.editing=id;openIdeaId(id)}break;
  case 'f-tab':if(!$('#modal').hidden)closeModal();UI.fTab=el.dataset.v;renderFactory();break;
  case 'kpi-inv':UI.fInv=true;renderFactory();break;
@@ -2013,8 +2027,9 @@ const grp=(arr,k)=>{const m={};(arr||[]).forEach(x=>{(m[x[k]]||(m[x[k]]=[])).pus
    When more ideas load later, applyFac() attaches the same data again without asking the database. */
 let FACDATA=null;
 async function liveLoadFac(){
- const [facs,makes,notes,lists]=await Promise.all([restAll('factories?select=handle,name,country,website&order=handle'),restAll('makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc,id.asc'),restAll('factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&order=idea_id,handle'),
-  restAll('listings?select=id,idea_id,handle,factory_name,price_cents,shipping_cents,handling_days,options,message,created_at&active=eq.true&order=created_at,id').catch(()=>[])]);
+ const [facs,makes,notes,lists,revs]=await Promise.all([restAll('factories?select=handle,name,country,website&order=handle'),restAll('makes?select=id,idea_id,handle,factory_name,kind,created_at&order=created_at.asc,id.asc'),restAll('factory_notes?select=idea_id,handle,factory_name,body,verdict,updated_at&order=idea_id,handle'),
+  restAll('listings?select=id,idea_id,handle,factory_name,price_cents,shipping_cents,handling_days,options,message,created_at&active=eq.true&order=created_at,id').catch(()=>[]),
+  restAll('reviews?select=id,listing_id,idea_id,handle,factory_name,author_name,rating,body,images,created_at,updated_at&order=created_at.desc,id').catch(()=>[])]);
  FACTORIES.length=0;(facs||[]).forEach(f=>FACTORIES.push([f.handle,f.name]));
  let det=[],invs=[],thr=[],msgs=[];FAC=null;
  OFFICIAL=false;
@@ -2022,17 +2037,20 @@ async function liveLoadFac(){
   try{OFFICIAL=!!(await rest('POST','rpc/is_official',{}))}catch(e){}
   [det,invs,thr]=await Promise.all([rest('POST','rpc/my_make_details',{}),restAll('invites?select=idea_id,handle&order=idea_id,handle'),restAll('threads?select=id,idea_id,handle,factory_name,blocked,created_at&order=created_at,id')]);
   if((thr||[]).length)msgs=await restAll('messages?select=id,thread_id,sender,body,created_at&order=created_at.asc,id.asc')}
- FACDATA={det,makes,notes,invs,thr,msgs,lists};applyFac()}
+ FACDATA={det,makes,notes,invs,thr,msgs,lists,revs};applyFac()}
 /* A live listing becomes an "offer" in the shapes the selling screens already use. Prices are stored in EUR cents;
    the screens keep prices in USD and convert to each visitor's currency, so EUR is turned into USD here. eur/eurShip keep the exact charge. */
 const listingOffer=l=>({id:l.id,live:true,fac:l.handle,factory:l.factory_name,price:l.price_cents/100/FX.EUR,shipping:l.shipping_cents/100/FX.EUR,cur:'EUR',eur:l.price_cents,eurShip:l.shipping_cents,handling:l.handling_days,options:parseOpts(l.options),msg:l.message||'',active:true,mode:'notify',at:Date.parse(l.created_at)});
-function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs,lists}=FACDATA;
- const D=new Map((det||[]).map(d=>[d.id,d])),M=grp((makes||[]).filter(m=>m.kind!=='platform'),'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id'),LS=grp(lists,'idea_id');
+function applyFac(){if(!FACDATA)return;const {det,makes,notes,invs,thr,msgs,lists,revs}=FACDATA;
+ const RV=grp(revs,'idea_id'),D=new Map((det||[]).map(d=>[d.id,d])),M=grp((makes||[]).filter(m=>m.kind!=='platform'),'idea_id'),N=grp(notes,'idea_id'),V=grp(invs,'idea_id'),TH=grp(thr,'idea_id'),MS=grp(msgs,'thread_id'),LS=grp(lists,'idea_id');
  S.me.facPriv=[];S.me.facPub=[];
  S.ideas.forEach(i=>{
   /* Latest maker is shown as the product; earlier outside makers stay as history. Proof link and message reach only the creator and that factory. */
   const ms=(M[i.id]||[]).map(m=>{const d=D.get(m.id)||{};return {id:m.id,fac:m.handle,factory:m.factory_name,proof:d.proof_url||'',msg:d.message||'',mode:'notify',at:Date.parse(m.created_at),handling:3}});
   i.priv=ms.length?ms[ms.length-1]:null;i.outside=ms.slice(0,-1);i.offers=(LS[i.id]||[]).map(listingOffer);
+  /* buyer reviews: each one rates this factory making this product (its listing), never the factory as a whole */
+  i.reviews=(RV[i.id]||[]).map(r=>({id:r.id,listing:r.listing_id,fac:r.handle,factory:r.factory_name,name:r.author_name,rating:r.rating,text:r.body,imgs:r.images||[],at:Date.parse(r.created_at),edited:r.updated_at!==r.created_at}));
+  i.offers.forEach(o=>{const rs=i.reviews.filter(r=>r.listing===o.id);o.revN=rs.length;o.revAvg=rs.length?rs.reduce((s,r)=>s+r.rating,0)/rs.length:0});
   if(FAC&&i.offers.some(o=>o.fac===FAC.handle))S.me.facPub.push(i.id);
   if(FAC&&ms.some(m=>m.fac===FAC.handle))S.me.facPriv.push(i.id);
   i.fnotes=(N[i.id]||[]).map(n=>({fac:n.handle,name:n.factory_name,text:n.body,at:Date.parse(n.updated_at),verdict:n.verdict||null}));
@@ -2281,10 +2299,48 @@ async function salesHTML(){let l=[];try{l=await rest('POST','rpc/my_sales',{})||
   <div class="co" style="font-size:13px;line-height:1.6">📍 <b>${esc(s.name)}</b><br>${esc(s.address)}، ${esc(s.city)}، ${esc(s.country)}<br><span dir="ltr">☎ ${esc(s.phone)}</span></div>
   <span class="${o.ship_status==='received'?'ok-t':''}">${shipSt(o.ship_status)}${o.tracking?` · <span dir="ltr">${esc(o.tracking)}</span>`:''}</span>
   ${o.ship_status==='new'?`<form class="row" data-form="ship" data-id="${o.id}"><input class="inp" name="t" maxlength="120" dir="ltr" placeholder="${T('trackPh')}" style="flex:1"><button class="btn sm pri">🚚 ${T('markShipped')}</button></form><small class="muted">${T('shipBy')(fmt(it.handling_days||3))}</small>`:''}</li>`}).join('')}</ul>`:`<p class="muted">${T('salesNone')}</p>`}`}
-async function purchHTML(){let l=[];try{l=await rest('POST','rpc/my_purchases',{})||[]}catch(e){}
- return `<h2>🛍️ ${T('purchT')}</h2>${l.length?`<ul class="lic-l">${l.map(o=>{const it=o.item;return `<li style="flex-direction:column;align-items:stretch;gap:4px"><b>${esc(it.title||'')} × ${fmt(it.qty)}</b><small class="muted">${esc(it.factory||'')} · ${moneyIn(o.amount_cents/100,'EUR')} · ${ago(Date.parse(o.created_at))}</small>
+let PURCH=[];
+const canReview=o=>o.status==='paid'&&(o.ship_status==='shipped'||o.ship_status==='received');
+async function purchHTML(){let l=[];try{l=await rest('POST','rpc/my_purchases',{})||[]}catch(e){}PURCH=l;
+ return `<h2>🛍️ ${T('purchT')}</h2>${l.length?`<ul class="lic-l">${l.map(o=>{const it=o.item,rv=o.review;return `<li style="flex-direction:column;align-items:stretch;gap:4px"><b>${esc(it.title||'')} × ${fmt(it.qty)}</b><small class="muted">${esc(it.factory||'')} · ${moneyIn(o.amount_cents/100,'EUR')} · ${ago(Date.parse(o.created_at))}</small>
   <span>${o.status==='paid'?shipSt(o.ship_status):T('ordSt')[o.status]||o.status}${o.tracking?` · ${T('trackL')}: <span dir="ltr">${esc(o.tracking)}</span>`:''}</span>
-  ${o.status==='paid'&&o.ship_status!=='received'?`<button class="btn sm pri" data-act="got-it" data-id="${o.id}">✅ ${T('gotIt2')}</button>`:''}</li>`}).join('')}</ul>`:`<p class="muted">${T('purchNone')}</p>`}`}
+  ${rv?`<small>${T('revYours')}: ${starsRow(rv.rating)}</small>`:''}
+  <div class="row" style="gap:8px;flex-wrap:wrap">${o.status==='paid'&&o.ship_status!=='received'?`<button class="btn sm pri" data-act="got-it" data-id="${o.id}">✅ ${T('gotIt2')}</button>`:''}${canReview(o)?`<button class="btn sm${rv?'':' pri'}" data-act="rev-open" data-id="${o.id}">⭐ ${rv?T('revEdit'):T('revBtn')}</button>`:''}</div></li>`}).join('')}</ul>`:`<p class="muted">${T('purchNone')}</p>`}`}
+/* ---- Buyer reviews: stars + text + up to 4 photos, for this factory's making of this product only ---- */
+const starsRow=n=>`<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span class="st-off">${'★'.repeat(5-n)}</span></span>`;
+const starsAvg=(a,n)=>`<span class="stars">★</span> <b class="tnum">${new Intl.NumberFormat(LOC[S.me.lang]||'en-US',{minimumFractionDigits:1,maximumFractionDigits:1}).format(a)}</b> <span class="muted tnum">(${T('revN')(fmt(n))})</span>`;
+function reviewsHTML(i){const rs=i.reviews||[];if(!rs.length)return '';
+ const groups=[];rs.forEach(r=>{const k=r.listing||r.fac;let g=groups.find(x=>x.k===k);if(!g)groups.push(g={k,factory:r.factory,l:[]});g.l.push(r)});
+ return `<section class="revs" id="revs"><h3>⭐ ${T('revT')}</h3><p class="muted" style="font-size:13px">${T('revNote')}</p>${groups.map(g=>{const a=g.l.reduce((s,r)=>s+r.rating,0)/g.l.length;return `<div class="rev-g"><div class="rev-gh"><b><bdi>${esc(g.factory)}</bdi></b><span>${starsAvg(a,g.l.length)}</span></div>
+ ${g.l.map(r=>`<article class="rev"><div class="rev-h">${starsRow(r.rating)}<b><bdi>${esc(r.name)}</bdi></b><small class="muted">${ago(r.at)}${r.edited?' · '+T('edited'):''}</small></div><p class="rev-t">${esc(r.text)}</p>${r.imgs.length?`<div class="rev-imgs">${r.imgs.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join('')}</div>`:''}</article>`).join('')}</div>`}).join('')}</section>`}
+function revFormHTML(o){const it=o.item,rv=o.review||{},st=[5,4,3,2,1].map(n=>`<input type="radio" name="st" value="${n}" id="st-${n}"${rv.rating===n?' checked':''}><label for="st-${n}" title="${n}/5">★</label>`).join('');
+ return `<h2>⭐ ${T('revBtn')}</h2><p class="muted">${esc(it.title||'')} · ${esc(it.factory||'')}</p><p class="pledge-stat">${T('revFor')(esc(it.factory||''))}</p>
+ <form data-form="review" data-id="${o.id}" class="edit"><div class="fld">${T('revStars')}<div class="rate" role="radiogroup">${st}</div></div>
+ <label class="fld">${T('revName')}<input class="inp" name="nm" maxlength="40" value="${esc(rv.name||S.me.name||'')}"></label>
+ <label class="fld">${T('revBody')}<textarea class="inp" name="body" rows="4" minlength="5" maxlength="1000" required placeholder="${T('revBodyPh')}">${esc(rv.body||'')}</textarea></label>
+ <label class="fld">${T('revPh')}<input type="file" name="ph" accept="image/*" multiple>${(rv.images||[]).length?`<small class="muted">${T('revPhKeep')}</small><div class="rev-imgs">${rv.images.map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>`:''}</label>
+ <p class="err" id="rv-err" hidden></p>
+ <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn pri">${T('revSave')}</button><button type="button" class="btn" data-act="my-purch">${T('revBack')}</button>${o.review?`<button type="button" class="btn ghost" style="color:var(--dislike)" data-act="rev-del" data-id="${o.id}">${T('revDel')}</button>`:''}</div></form>`}
+const imgPrefixes=urls=>(urls||[]).map(u=>u.split('/object/public/idea-images/')[1]).filter(Boolean);
+async function refreshReviews(){try{FACDATA.revs=await restAll('reviews?select=id,listing_id,idea_id,handle,factory_name,author_name,rating,body,images,created_at,updated_at&order=created_at.desc,id');applyFac();save();if(!UI.modal)renderView()}catch(e){}}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-act="rev-open"],[data-act="rev-del"]');if(!b)return;e.preventDefault();const o=PURCH.find(x=>x.id===b.dataset.id);if(!o)return;
+ if(b.dataset.act==='rev-open'){$('#mc').innerHTML=revFormHTML(o);return}
+ b.disabled=true;try{await rest('POST','rpc/delete_review',{p_order:o.id});const p=imgPrefixes((o.review||{}).images);if(p.length)fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:p})}).catch(()=>{});
+  toast(T('revDeleted'));await refreshReviews();$('#mc').innerHTML=await purchHTML()}catch(x){b.disabled=false;toast(T('netErr'))}});
+document.addEventListener('submit',async e=>{const f=e.target;if(f.dataset.form!=='review')return;e.preventDefault();const o=PURCH.find(x=>x.id===f.dataset.id);if(!o)return;
+ const err=$('#rv-err'),bad=m=>{err.textContent=m;err.hidden=false},st=+((f.querySelector('input[name=st]:checked')||{}).value||0),body=f.body.value.trim(),files=[...(f.ph.files||[])];
+ err.hidden=true;if(!st)return bad(T('revNeedStar'));if(body.length<5)return bad(T('revNeedBody'));if(files.length>4)return bad(T('revMax4'));
+ const btn=f.querySelector('button.pri');btn.disabled=true;btn.textContent='…';const old=(o.review||{}).images||[];let imgs=old,added=[];
+ try{if(files.length){const tag='rev-'+o.id.slice(0,8)+'-'+Date.now().toString(36);for(const [k,file] of files.entries())added.push(await uploadImg(tag,await readImg(file,1600,.8),k));imgs=added}
+  await rest('POST','rpc/save_review',{p_order:o.id,p_rating:st,p_body:body,p_images:imgs,p_name:f.nm.value.trim()});
+  if(files.length&&old.length){const p=imgPrefixes(old);fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:p})}).catch(()=>{})}
+  if(f.nm.value.trim())S.me.name=f.nm.value.trim();toast(T('revSaved'));await refreshReviews();$('#mc').innerHTML=await purchHTML()}
+ catch(x){const m=x.message||'';if(added.length){const p=imgPrefixes(added);fetch(`${SB.url}/storage/v1/object/idea-images`,{method:'DELETE',headers:{apikey:SB.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify({prefixes:p})}).catch(()=>{})}
+  bad(/reserved_name/.test(m)?T('nameReserved'):/not_allowed/.test(m)?T('revNotYet'):T('netErr'));btn.disabled=false;btn.textContent=T('revSave')}});
+Object.assign(L.ar,{revT:'تقييمات المشترين',revNote:'كل تقييم يخص تصنيع هذا المصنع لهذا المنتج فقط، وليس المصنع في كل منتجاته.',revBtn:'قيّم المنتج',revEdit:'تعديل مراجعتك',revYours:'تقييمك',revFor:f=>`تقييمك يخص تصنيع «${f}» لهذا المنتج فقط. صوّر المنتج عندك عشان يشوفه اللي بعدك.`,revStars:'كم نجمة تعطي التصنيع؟',revName:'اسمك الظاهر',revBody:'مراجعتك',revBodyPh:'كيف الجودة؟ هل طابق الوصف والصور؟ كيف التغليف والشحن؟',revPh:'صور المنتج عندك (حتى 4)',revPhKeep:'إذا ما اخترت صوراً جديدة تبقى صورك السابقة:',revSave:'نشر المراجعة',revBack:'رجوع',revDel:'حذف المراجعة',revNeedStar:'اختر عدد النجوم.',revNeedBody:'اكتب مراجعة من 5 أحرف على الأقل.',revMax4:'حتى 4 صور فقط.',revSaved:'نُشرت مراجعتك، شكراً!',revDeleted:'حُذفت مراجعتك.',revNotYet:'تقدر تقيّم المنتج بعد شحنه.',revN:n=>`${n} تقييم`});
+Object.assign(L.en,{revT:'Buyer reviews',revNote:'Each review rates this factory’s making of this product only, not the factory across all its products.',revBtn:'Review the product',revEdit:'Edit your review',revYours:'Your rating',revFor:f=>`Your review rates “${f}” making this product only. Add photos of what you received for the next buyers.`,revStars:'How many stars for the making?',revName:'Name shown',revBody:'Your review',revBodyPh:'How is the quality? Does it match the description and photos? Packaging and shipping?',revPh:'Photos of your product (up to 4)',revPhKeep:'If you don’t pick new photos, your previous ones stay:',revSave:'Post review',revBack:'Back',revDel:'Delete review',revNeedStar:'Pick a number of stars.',revNeedBody:'Write at least 5 characters.',revMax4:'Up to 4 photos only.',revSaved:'Your review is posted, thank you!',revDeleted:'Your review was deleted.',revNotYet:'You can review the product once it ships.',revN:n=>`${n} ${n==='1'?'review':'reviews'}`});
+Object.assign(L.zh,{revT:'买家评价',revNote:'每条评价只针对该工厂制作的这款产品,而不是工厂的所有产品。',revBtn:'评价产品',revEdit:'修改评价',revYours:'你的评分',revFor:f=>`你的评价只针对「${f}」制作的这款产品。拍下收到的产品给后来的买家看。`,revStars:'为制作质量打几颗星?',revName:'显示名称',revBody:'你的评价',revBodyPh:'质量如何?与描述和图片一致吗?包装和物流怎样?',revPh:'产品照片(最多 4 张)',revPhKeep:'如果不选新照片,将保留之前的照片:',revSave:'发布评价',revBack:'返回',revDel:'删除评价',revNeedStar:'请选择星级。',revNeedBody:'请至少写 5 个字。',revMax4:'最多 4 张照片。',revSaved:'评价已发布,谢谢!',revDeleted:'评价已删除。',revNotYet:'产品发货后才能评价。',revN:n=>`${n} 条评价`});
+Object.assign(L.tr,{revT:'Alıcı yorumları',revNote:'Her yorum yalnızca bu fabrikanın bu ürünü üretimini değerlendirir, fabrikanın tüm ürünlerini değil.',revBtn:'Ürünü değerlendir',revEdit:'Yorumunu düzenle',revYours:'Puanın',revFor:f=>`Yorumun yalnızca «${f}» tarafından üretilen bu ürün içindir. Sonraki alıcılar için gelen ürünün fotoğrafını ekle.`,revStars:'Üretime kaç yıldız?',revName:'Görünen ad',revBody:'Yorumun',revBodyPh:'Kalite nasıl? Açıklama ve fotoğraflarla uyuşuyor mu? Paketleme ve kargo?',revPh:'Ürün fotoğrafları (en fazla 4)',revPhKeep:'Yeni fotoğraf seçmezsen öncekiler kalır:',revSave:'Yorumu yayınla',revBack:'Geri',revDel:'Yorumu sil',revNeedStar:'Yıldız sayısını seç.',revNeedBody:'En az 5 karakter yaz.',revMax4:'En fazla 4 fotoğraf.',revSaved:'Yorumun yayınlandı, teşekkürler!',revDeleted:'Yorumun silindi.',revNotYet:'Ürün kargolandıktan sonra değerlendirebilirsin.',revN:n=>`${n} yorum`});
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-act="my-sales"],[data-act="my-purch"],[data-act="got-it"]');if(!b)return;e.preventDefault();const a=b.dataset.act;
  if(a==='my-sales'){openModal('<p class="muted">…</p>','sales');$('#mc').innerHTML=await salesHTML()}
  else if(a==='my-purch'){openModal('<p class="muted">…</p>','purch');$('#mc').innerHTML=await purchHTML()}
